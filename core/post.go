@@ -1,0 +1,567 @@
+package core
+
+import (
+	"github.com/tapglue/api/service/app"
+	"github.com/tapglue/api/service/connection"
+	"github.com/tapglue/api/service/event"
+	"github.com/tapglue/api/service/object"
+	"github.com/tapglue/api/service/user"
+)
+
+// TypePost identifies an object as a Post.
+const TypePost = "tg_post"
+
+var defaultOwned = true
+
+// Post is the intermediate representation for posts.
+type Post struct {
+	Counts  PostCounts
+	IsLiked bool
+
+	*object.Object
+}
+
+// PostCounts bundles all connected entity counts.
+type PostCounts struct {
+	Comments int
+	Likes    int
+}
+
+// PostFeed is the composite answer for post list methods.
+type PostFeed struct {
+	Posts   PostList
+	UserMap user.Map
+}
+
+// PostMap is the user collection indexed by their ids.
+type PostMap map[uint64]*Post
+
+// PostList is a collection of Post.
+type PostList []*Post
+
+func (ps PostList) toMap() PostMap {
+	pm := PostMap{}
+
+	for _, post := range ps {
+		pm[post.ID] = post
+	}
+
+	return pm
+}
+
+func (ps PostList) Len() int {
+	return len(ps)
+}
+
+func (ps PostList) Less(i, j int) bool {
+	return ps[i].CreatedAt.After(ps[j].CreatedAt)
+}
+
+func (ps PostList) Swap(i, j int) {
+	ps[i], ps[j] = ps[j], ps[i]
+}
+
+// IDs returns the id of all posts in the list.
+func (ps PostList) IDs() []uint64 {
+	ids := []uint64{}
+
+	for _, p := range ps {
+		ids = append(ids, p.ID)
+	}
+
+	return ids
+}
+
+// OwnerIDs extracts the OwnerID of every post.
+func (ps PostList) OwnerIDs() []uint64 {
+	ids := []uint64{}
+
+	for _, p := range ps {
+		ids = append(ids, p.OwnerID)
+	}
+
+	return ids
+}
+
+func postsFromObjects(os object.List) PostList {
+	ps := PostList{}
+
+	for _, o := range os {
+		ps = append(ps, &Post{Object: o})
+	}
+
+	return ps
+}
+
+// PostCreateFunc associates the given Post with the owner and stores it.
+type PostCreateFunc func(
+	currentApp *app.App,
+	origin Origin,
+	post *Post,
+) (*Post, error)
+
+// PostCreate associates the given Post with the owner andstores it.
+func PostCreate(
+	objects object.Service,
+) PostCreateFunc {
+	return func(
+		currentApp *app.App,
+		origin Origin,
+		post *Post,
+	) (*Post, error) {
+		post.OwnerID = origin.UserID
+		post.Owned = defaultOwned
+		post.Type = TypePost
+
+		if err := post.Validate(); err != nil {
+			return nil, wrapError(ErrInvalidEntity, "invalid Post: %s", err)
+		}
+
+		if err := constrainPostRestrictions(origin, post.Restrictions); err != nil {
+			return nil, err
+		}
+
+		if err := constrainPostVisibility(origin, post.Visibility); err != nil {
+			return nil, err
+		}
+
+		if err := post.Object.Validate(); err != nil {
+			return nil, wrapError(ErrInvalidEntity, "%s", err)
+		}
+
+		o, err := objects.Put(currentApp.Namespace(), post.Object)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Post{Object: o}, nil
+	}
+}
+
+// PostDeleteFunc marks a Post as deleted and updates it in the service.
+type PostDeleteFunc func(
+	currentApp *app.App,
+	origin uint64,
+	id uint64,
+) error
+
+// PostDelete marks a Post as deleted and updates it in the service.
+func PostDelete(
+	objects object.Service,
+) PostDeleteFunc {
+	return func(
+		currentApp *app.App,
+		origin uint64,
+		id uint64,
+	) error {
+		os, err := objects.Query(currentApp.Namespace(), object.QueryOptions{
+			ID:    &id,
+			Owned: &defaultOwned,
+			Types: []string{
+				TypePost,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		// A delete should be idempotent and always succeed.
+		if len(os) == 0 {
+			return nil
+		}
+
+		post := os[0]
+
+		if post.OwnerID != origin {
+			return wrapError(ErrUnauthorized, "not allowed to delete post")
+		}
+
+		post.Deleted = true
+
+		_, err = objects.Put(currentApp.Namespace(), post)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
+// PostListAllFunc returns all objects which are of type post.
+type PostListAllFunc func(
+	currentApp *app.App,
+	origin uint64,
+	opts object.QueryOptions,
+) (*PostFeed, error)
+
+// PostListAll returns all objects which are of type post.
+func PostListAll(
+	events event.Service,
+	objects object.Service,
+	users user.Service,
+) PostListAllFunc {
+	return func(
+		currentApp *app.App,
+		origin uint64,
+		opts object.QueryOptions,
+	) (*PostFeed, error) {
+		opts.Owned = &defaultOwned
+		opts.Types = []string{TypePost}
+		opts.Visibilities = []object.Visibility{
+			object.VisibilityPublic,
+			object.VisibilityGlobal,
+		}
+
+		os, err := objects.Query(currentApp.Namespace(), opts)
+		if err != nil {
+			return nil, err
+		}
+
+		ps := postsFromObjects(os)
+
+		err = enrichCounts(events, objects, currentApp, ps)
+		if err != nil {
+			return nil, err
+		}
+
+		err = enrichIsLiked(events, currentApp, origin, ps)
+		if err != nil {
+			return nil, err
+		}
+
+		um, err := user.MapFromIDs(users, currentApp.Namespace(), ps.OwnerIDs()...)
+		if err != nil {
+			return nil, err
+		}
+
+		return &PostFeed{
+			Posts:   ps,
+			UserMap: um,
+		}, nil
+	}
+}
+
+// PostListUserFunc returns all posts for the given user id as visible by the
+// connection user id.
+type PostListUserFunc func(
+	currentApp *app.App,
+	origin uint64,
+	userID uint64,
+	opts object.QueryOptions,
+) (*PostFeed, error)
+
+// PostListUser returns all posts for the given user id as visible by the
+// connection user id.
+func PostListUser(
+	connections connection.Service,
+	events event.Service,
+	objects object.Service,
+	users user.Service,
+) PostListUserFunc {
+	return func(
+		currentApp *app.App,
+		origin uint64,
+		userID uint64,
+		opts object.QueryOptions,
+	) (*PostFeed, error) {
+		vs := []object.Visibility{
+			object.VisibilityPublic,
+			object.VisibilityGlobal,
+		}
+
+		// Check relation and include connection visibility.
+		if origin != userID {
+			r, err := queryRelation(connections, currentApp, origin, userID)
+			if err != nil {
+				return nil, err
+			}
+
+			if r.isFriend || r.isFollowing {
+				vs = append(vs, object.VisibilityConnection)
+			}
+		}
+
+		// We want all visibilities if the connection and target are the same.
+		if origin == userID {
+			vs = append(vs, object.VisibilityConnection, object.VisibilityPrivate)
+		}
+
+		opts.OwnerIDs = []uint64{userID}
+		opts.Owned = &defaultOwned
+		opts.Types = []string{TypePost}
+		opts.Visibilities = vs
+
+		os, err := objects.Query(currentApp.Namespace(), opts)
+		if err != nil {
+			return nil, err
+		}
+
+		ps := postsFromObjects(os)
+
+		err = enrichCounts(events, objects, currentApp, ps)
+		if err != nil {
+			return nil, err
+		}
+
+		err = enrichIsLiked(events, currentApp, origin, ps)
+		if err != nil {
+			return nil, err
+		}
+
+		um, err := user.MapFromIDs(users, currentApp.Namespace(), ps.OwnerIDs()...)
+		if err != nil {
+			return nil, err
+		}
+
+		return &PostFeed{
+			Posts:   ps,
+			UserMap: um,
+		}, nil
+	}
+}
+
+// PostRetrieveFunc returns the Post for the given id.
+type PostRetrieveFunc func(
+	currentApp *app.App,
+	origin uint64,
+	id uint64,
+) (*Post, error)
+
+// PostRetrieve returns the Post for the given id.
+func PostRetrieve(
+	connections connection.Service,
+	events event.Service,
+	objects object.Service,
+) PostRetrieveFunc {
+	return func(
+		currentApp *app.App,
+		origin uint64,
+		id uint64,
+	) (*Post, error) {
+		os, err := objects.Query(currentApp.Namespace(), object.QueryOptions{
+			ID:    &id,
+			Owned: &defaultOwned,
+			Types: []string{
+				TypePost,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(os) != 1 {
+			return nil, ErrNotFound
+		}
+
+		if err := isPostVisible(connections, currentApp, os[0], origin); err != nil {
+			return nil, err
+		}
+
+		post := &Post{Object: os[0]}
+
+		err = enrichCounts(events, objects, currentApp, PostList{post})
+		if err != nil {
+			return nil, err
+		}
+
+		err = enrichIsLiked(events, currentApp, origin, PostList{post})
+		if err != nil {
+			return nil, err
+		}
+
+		return post, nil
+	}
+}
+
+// PostUpdateFunc stores the post with the new values.
+type PostUpdateFunc func(
+	currentApp *app.App,
+	origin Origin,
+	id uint64,
+	post *Post,
+) (*Post, error)
+
+// PostUpdate stores the post with the new values.
+func PostUpdate(
+	objects object.Service,
+) PostUpdateFunc {
+	return func(
+		currentApp *app.App,
+		origin Origin,
+		id uint64,
+		post *Post,
+	) (*Post, error) {
+		if err := constrainPostRestrictions(origin, post.Restrictions); err != nil {
+			return nil, err
+		}
+
+		ps, err := objects.Query(currentApp.Namespace(), object.QueryOptions{
+			ID: &id,
+			OwnerIDs: []uint64{
+				origin.UserID,
+			},
+			Owned: &defaultOwned,
+			Types: []string{
+				TypePost,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(ps) != 1 {
+			return nil, ErrNotFound
+		}
+
+		// Preserve information.
+		p := ps[0]
+		p.Attachments = post.Attachments
+		p.Tags = post.Tags
+		p.Visibility = post.Visibility
+
+		if post.Restrictions != nil {
+			p.Restrictions = post.Restrictions
+		}
+
+		err = constrainPostVisibility(origin, p.Visibility)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := p.Validate(); err != nil {
+			return nil, wrapError(ErrInvalidEntity, "%s", err)
+		}
+
+		o, err := objects.Put(currentApp.Namespace(), p)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Post{Object: o}, nil
+	}
+}
+
+func constrainPostRestrictions(origin Origin, restrictions *object.Restrictions) error {
+	if !origin.IsBackend() && restrictions != nil {
+		return wrapError(
+			ErrUnauthorized,
+			"restrictions can only be set via backend integration",
+		)
+	}
+
+	return nil
+}
+
+func constrainPostVisibility(origin Origin, visibility object.Visibility) error {
+	if !origin.IsBackend() && visibility == object.VisibilityGlobal {
+		return wrapError(
+			ErrUnauthorized,
+			"global visibility can only set by backend integration",
+		)
+	}
+
+	return nil
+}
+
+func enrichCounts(
+	events event.Service,
+	objects object.Service,
+	currentApp *app.App,
+	ps PostList,
+) error {
+	for _, p := range ps {
+		comments, err := objects.Count(currentApp.Namespace(), object.QueryOptions{
+			ObjectIDs: []uint64{
+				p.ID,
+			},
+			Types: []string{
+				TypeComment,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		likes, err := events.Count(currentApp.Namespace(), event.QueryOptions{
+			Enabled: &defaultEnabled,
+			ObjectIDs: []uint64{
+				p.ID,
+			},
+			Types: []string{
+				TypeLike,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		p.Counts = PostCounts{
+			Comments: comments,
+			Likes:    likes,
+		}
+	}
+
+	return nil
+}
+
+func enrichIsLiked(
+	events event.Service,
+	currentApp *app.App,
+	userID uint64,
+	ps PostList,
+) error {
+	for _, p := range ps {
+		es, err := events.Query(currentApp.Namespace(), event.QueryOptions{
+			Enabled: &defaultEnabled,
+			ObjectIDs: []uint64{
+				p.ID,
+			},
+			Types: []string{
+				TypeLike,
+			},
+			UserIDs: []uint64{
+				userID,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		if len(es) == 1 {
+			p.IsLiked = true
+		}
+	}
+
+	return nil
+}
+
+// isPostVisible given a post validates that the origin is allowed to see the
+// post.
+func isPostVisible(
+	connections connection.Service,
+	currentApp *app.App,
+	post *object.Object,
+	origin uint64,
+) error {
+	if origin == post.OwnerID {
+		return nil
+	}
+
+	switch post.Visibility {
+	case object.VisibilityGlobal, object.VisibilityPublic:
+		return nil
+	case object.VisibilityPrivate:
+		return ErrNotFound
+	}
+
+	r, err := queryRelation(connections, currentApp, origin, post.OwnerID)
+	if err != nil {
+		return err
+	}
+
+	if !r.isFriend && !r.isFollowing {
+		return ErrNotFound
+	}
+
+	return nil
+}

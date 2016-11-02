@@ -1,0 +1,85 @@
+package event
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/tapglue/api/platform/cache"
+)
+
+const (
+	cachePrefixCount = "events.count"
+)
+
+type cacheService struct {
+	countsCache cache.CountService
+	next        Service
+}
+
+// CacheServiceMiddleware adds caching capabilities to the Service by using
+// read-through and write-through methods to store results of heavy computation
+// with sensible TTLs.
+func CacheServiceMiddleware(countsCache cache.CountService) ServiceMiddleware {
+	return func(next Service) Service {
+		return &cacheService{
+			countsCache: countsCache,
+			next:        next,
+		}
+	}
+}
+
+func (s *cacheService) Count(ns string, opts QueryOptions) (int, error) {
+	var (
+		key = cacheKey(opts)
+	)
+
+	count, err := s.countsCache.Get(ns, key)
+	if err == nil {
+		return count, nil
+	}
+
+	if !cache.IsKeyNotFound(err) {
+		return -1, err
+	}
+
+	count, err = s.next.Count(ns, opts)
+	if err != nil {
+		return -1, err
+	}
+
+	err = s.countsCache.Set(ns, key, count)
+
+	return count, err
+}
+
+func (s *cacheService) Put(ns string, input *Event) (output *Event, err error) {
+	return s.next.Put(ns, input)
+}
+
+func (s *cacheService) Query(ns string, opts QueryOptions) (list List, err error) {
+	return s.next.Query(ns, opts)
+}
+
+func (s *cacheService) Setup(ns string) (err error) {
+	return s.next.Setup(ns)
+}
+
+func (s *cacheService) Teardown(ns string) (err error) {
+	return s.next.Teardown(ns)
+}
+
+func cacheKey(opts QueryOptions) string {
+	ps := []string{
+		cachePrefixCount,
+	}
+
+	if len(opts.Types) == 1 {
+		ps = append(ps, opts.Types[0])
+	}
+
+	if len(opts.ObjectIDs) == 1 {
+		ps = append(ps, fmt.Sprintf("%d", opts.ObjectIDs[0]))
+	}
+
+	return strings.Join(ps, cache.KeySeparator)
+}
