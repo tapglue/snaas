@@ -10,8 +10,8 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 
-	"github.com/tapglue/api/core"
-	"github.com/tapglue/api/service/user"
+	"github.com/tapglue/snaas/core"
+	"github.com/tapglue/snaas/service/user"
 )
 
 // UserCreate stores the provided user and returns it with a valid session.

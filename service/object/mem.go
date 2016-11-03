@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/tapglue/api/platform/flake"
+	"github.com/tapglue/snaas/platform/flake"
 )
 
 type memService struct {

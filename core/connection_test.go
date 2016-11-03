@@ -3,7 +3,7 @@ package core
 import (
 	"testing"
 
-	"github.com/tapglue/api/service/connection"
+	"github.com/tapglue/snaas/service/connection"
 )
 
 func TestValidateConTransition(t *testing.T) {

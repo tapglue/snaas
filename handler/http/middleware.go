@@ -15,11 +15,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/net/context"
 
-	"github.com/tapglue/api/platform/limiter"
-	"github.com/tapglue/api/platform/metrics"
-	"github.com/tapglue/api/service/app"
-	"github.com/tapglue/api/service/session"
-	"github.com/tapglue/api/service/user"
+	"github.com/tapglue/snaas/platform/limiter"
+	"github.com/tapglue/snaas/platform/metrics"
+	"github.com/tapglue/snaas/service/app"
+	"github.com/tapglue/snaas/service/session"
+	"github.com/tapglue/snaas/service/user"
 )
 
 const headerIDFV = "X-Tapglue-Idfv"

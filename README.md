@@ -1,2 +1,3 @@
-# api
-The Tapglue Social Networking API
+# Tapglue SNAAS
+
+The Tapglue Social Network As A Service.

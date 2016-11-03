@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/net/context"
 
-	"github.com/tapglue/api/core"
+	"github.com/tapglue/snaas/core"
 )
 
 const pgHealthcheck = `SELECT 1`

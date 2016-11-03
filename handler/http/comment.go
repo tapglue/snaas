@@ -8,9 +8,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/tapglue/api/core"
-	"github.com/tapglue/api/service/object"
-	"github.com/tapglue/api/service/user"
+	"github.com/tapglue/snaas/core"
+	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/user"
 )
 
 // CommentCreate creates a new Comment on behalf of the current user.

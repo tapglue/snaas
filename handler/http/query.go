@@ -10,11 +10,11 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/tapglue/api/service/app"
-	"github.com/tapglue/api/service/connection"
-	"github.com/tapglue/api/service/event"
-	"github.com/tapglue/api/service/object"
-	"github.com/tapglue/api/service/user"
+	"github.com/tapglue/snaas/service/app"
+	"github.com/tapglue/snaas/service/connection"
+	"github.com/tapglue/snaas/service/event"
+	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/user"
 	v04_core "github.com/tapglue/multiverse/v04/core"
 )
 

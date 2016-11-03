@@ -6,7 +6,7 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 
-	predis "github.com/tapglue/api/platform/redis"
+	predis "github.com/tapglue/snaas/platform/redis"
 )
 
 const (

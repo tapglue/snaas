@@ -3,9 +3,9 @@ package http
 import (
 	"golang.org/x/net/context"
 
-	"github.com/tapglue/api/core"
-	"github.com/tapglue/api/service/app"
-	"github.com/tapglue/api/service/user"
+	"github.com/tapglue/snaas/core"
+	"github.com/tapglue/snaas/service/app"
+	"github.com/tapglue/snaas/service/user"
 )
 
 const (

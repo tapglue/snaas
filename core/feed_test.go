@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tapglue/api/service/connection"
-	"github.com/tapglue/api/service/event"
-	"github.com/tapglue/api/service/user"
+	"github.com/tapglue/snaas/service/connection"
+	"github.com/tapglue/snaas/service/event"
+	"github.com/tapglue/snaas/service/user"
 )
 
 func TestAffiliation(t *testing.T) {

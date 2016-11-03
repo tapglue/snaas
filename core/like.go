@@ -3,11 +3,11 @@ package core
 import (
 	"sort"
 
-	"github.com/tapglue/api/service/app"
-	"github.com/tapglue/api/service/connection"
-	"github.com/tapglue/api/service/event"
-	"github.com/tapglue/api/service/object"
-	"github.com/tapglue/api/service/user"
+	"github.com/tapglue/snaas/service/app"
+	"github.com/tapglue/snaas/service/connection"
+	"github.com/tapglue/snaas/service/event"
+	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/user"
 )
 
 const (

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tapglue/api/platform/generate"
+	"github.com/tapglue/snaas/platform/generate"
 )
 
 type prepareFunc func(t *testing.T, namespace string) Service

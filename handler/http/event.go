@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tapglue/api/service/event"
+	"github.com/tapglue/snaas/service/event"
 )
 
 type payloadEvent struct {

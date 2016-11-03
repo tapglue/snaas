@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/tapglue/api/core"
+	"github.com/tapglue/snaas/core"
 )
 
 // Errors used for protocol control flow.

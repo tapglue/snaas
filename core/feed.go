@@ -4,12 +4,12 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/tapglue/api/platform/flake"
-	"github.com/tapglue/api/service/app"
-	"github.com/tapglue/api/service/connection"
-	"github.com/tapglue/api/service/event"
-	"github.com/tapglue/api/service/object"
-	"github.com/tapglue/api/service/user"
+	"github.com/tapglue/snaas/platform/flake"
+	"github.com/tapglue/snaas/service/app"
+	"github.com/tapglue/snaas/service/connection"
+	"github.com/tapglue/snaas/service/event"
+	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/user"
 )
 
 const namespaceGambify = "app_309_443"

@@ -8,7 +8,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 
-	"github.com/tapglue/api/platform/service"
+	"github.com/tapglue/snaas/platform/service"
 )
 
 // Attachment variants available for Objects.

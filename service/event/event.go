@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tapglue/api/platform/service"
+	"github.com/tapglue/snaas/platform/service"
 )
 
 // Predefined time periods to use for aggregates.

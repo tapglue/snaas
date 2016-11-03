@@ -10,9 +10,9 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 
-	"github.com/tapglue/api/core"
-	"github.com/tapglue/api/service/connection"
-	"github.com/tapglue/api/service/user"
+	"github.com/tapglue/snaas/core"
+	"github.com/tapglue/snaas/service/connection"
+	"github.com/tapglue/snaas/service/user"
 )
 
 // ConnectionByState returns all connections for a user for a certain state.

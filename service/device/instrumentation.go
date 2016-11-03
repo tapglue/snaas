@@ -6,7 +6,7 @@ import (
 	kitmetrics "github.com/go-kit/kit/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/tapglue/api/platform/metrics"
+	"github.com/tapglue/snaas/platform/metrics"
 )
 
 const serviceName = "device"

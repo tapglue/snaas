@@ -3,7 +3,7 @@ package connection
 import (
 	"time"
 
-	"github.com/tapglue/api/platform/service"
+	"github.com/tapglue/snaas/platform/service"
 )
 
 // Supported states for connections.

@@ -7,7 +7,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/tapglue/api/platform/pg"
+	"github.com/tapglue/snaas/platform/pg"
 )
 
 const (

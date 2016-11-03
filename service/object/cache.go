@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tapglue/api/platform/cache"
+	"github.com/tapglue/snaas/platform/cache"
 )
 
 const (

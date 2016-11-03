@@ -1,8 +1,8 @@
 package core
 
 import (
-	"github.com/tapglue/api/service/app"
-	"github.com/tapglue/api/service/device"
+	"github.com/tapglue/snaas/service/app"
+	"github.com/tapglue/snaas/service/device"
 )
 
 var defaultDeleted = false

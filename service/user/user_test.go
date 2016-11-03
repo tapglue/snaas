@@ -3,7 +3,7 @@ package user
 import (
 	"testing"
 
-	"github.com/tapglue/api/platform/generate"
+	"github.com/tapglue/snaas/platform/generate"
 )
 
 const (

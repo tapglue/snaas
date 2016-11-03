@@ -5,8 +5,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/tapglue/api/platform/generate"
-	"github.com/tapglue/api/platform/service"
+	"github.com/tapglue/snaas/platform/generate"
+	"github.com/tapglue/snaas/platform/service"
 )
 
 // DeviceIDUnknown is the default for untracked devices.

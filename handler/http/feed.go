@@ -8,9 +8,9 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/tapglue/api/core"
-	"github.com/tapglue/api/service/event"
-	"github.com/tapglue/api/service/user"
+	"github.com/tapglue/snaas/core"
+	"github.com/tapglue/snaas/service/event"
+	"github.com/tapglue/snaas/service/user"
 )
 
 // FeedEvents returns the events of the current user driven by the social and

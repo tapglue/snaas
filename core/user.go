@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tapglue/api/platform/generate"
-	"github.com/tapglue/api/service/app"
-	"github.com/tapglue/api/service/connection"
-	"github.com/tapglue/api/service/session"
-	"github.com/tapglue/api/service/user"
+	"github.com/tapglue/snaas/platform/generate"
+	"github.com/tapglue/snaas/service/app"
+	"github.com/tapglue/snaas/service/connection"
+	"github.com/tapglue/snaas/service/session"
+	"github.com/tapglue/snaas/service/user"
 )
 
 // UserCreateFunc stores the provided user and creates a session.

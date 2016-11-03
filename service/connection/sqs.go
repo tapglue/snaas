@@ -7,7 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 
-	platformSQS "github.com/tapglue/api/platform/sqs"
+	platformSQS "github.com/tapglue/snaas/platform/sqs"
 )
 
 const (

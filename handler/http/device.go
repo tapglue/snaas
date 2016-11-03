@@ -7,8 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
 
-	"github.com/tapglue/api/core"
-	"github.com/tapglue/api/service/device"
+	"github.com/tapglue/snaas/core"
+	"github.com/tapglue/snaas/service/device"
 )
 
 // DeviceDelete removes a user's device.

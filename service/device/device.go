@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/text/language"
 
-	"github.com/tapglue/api/platform/service"
+	"github.com/tapglue/snaas/platform/service"
 )
 
 const (
