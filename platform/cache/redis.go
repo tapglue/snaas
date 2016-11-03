@@ -5,16 +5,13 @@ import (
 	"strings"
 
 	"github.com/garyburd/redigo/redis"
+
+	predis "github.com/tapglue/api/platform/redis"
 )
 
 const (
 	cacheTTLDefault = 300
-
-	redisCommandEX  = "EX"
-	redisCommandGET = "GET"
-	redisCommandSET = "SET"
-
-	errCode = -1
+	errCode         = -1
 )
 
 type redisCountService struct {
@@ -34,7 +31,7 @@ func (s *redisCountService) Get(ns, key string) (int, error) {
 	)
 	defer con.Close()
 
-	res, err := con.Do(redisCommandGET, prefixKey(ns, key))
+	res, err := con.Do(predis.CommandGET, prefixKey(ns, key))
 	if err != nil {
 		return errCode, fmt.Errorf("cache get failed: %s", err)
 	}
@@ -56,10 +53,10 @@ func (s *redisCountService) Set(ns, key string, count int) error {
 	defer con.Close()
 
 	_, err := con.Do(
-		redisCommandSET,
+		predis.CommandSET,
 		prefixKey(ns, key),
 		uint64(count),
-		redisCommandEX,
+		predis.CommandEX,
 		cacheTTLDefault,
 	)
 	if err != nil {
