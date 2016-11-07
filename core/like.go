@@ -297,7 +297,7 @@ func LikesUser(
 			ls = ls[:opts.Limit]
 		}
 
-		ps = postsByEvents(ls, ps.toMap())
+		ps = postsForLikes(ls, ps.toMap())
 
 		err = enrichCounts(events, objects, currentApp, ps)
 		if err != nil {
@@ -327,6 +327,15 @@ func LikesUser(
 			UserMap: um,
 		}, nil
 	}
+}
+
+// IsLike indicates if Event is a Like.
+func IsLike(e *event.Event) bool {
+	if e.Type != TypeLike {
+		return false
+	}
+
+	return e.Owned
 }
 
 func constrainLikeRestriction(restrictions *object.Restrictions) error {
@@ -364,7 +373,7 @@ func eventVisibilitiesForRelation(r *relation) []event.Visibility {
 	}
 }
 
-func postsByEvents(es event.List, pm PostMap) PostList {
+func postsForLikes(es event.List, pm PostMap) PostList {
 	ps := PostList{}
 
 	for _, event := range es {

@@ -11,19 +11,18 @@ import (
 )
 
 const (
-	pgInsertApp = `INSERT INTO %s.applications (account_id, json_data) VALUES($1, $2) RETURNING id`
-	pgUpdateApp = `UPDATE %s.applications SET json_data = $3 WHERE account_id = $1 AND id = $2 RETURNING id`
+	pgInsertApp = `INSERT INTO %s.applications (json_data) VALUES($1) RETURNING id`
+	pgUpdateApp = `UPDATE %s.applications SET json_data = $2 WHERE id = $1 RETURNING id`
 
 	pgClauseBefore        = `(json_data->>'created_at')::TIMESTAMP < ?`
 	pgClauseBackendTokens = `(json_data->>'backend_token')::TEXT IN (?)`
 	pgClauseEnabled       = `(json_data->>'enabled')::BOOL = ?::BOOL`
 	pgClauseIDs           = `id IN (?)`
 	pgClauseInProduction  = `(json_data->>'in_production')::BOOL = ?::BOOL`
-	pgClauseOrgIDs        = `account_id IN (?)`
 	pgClausePublicIds     = `(json_data->>'id')::TEXT IN (?)`
 	pgClauseTokens        = `(json_data->>'token')::TEXT IN (?)`
 
-	pgListApps = `SELECT id, account_id, json_data FROM %s.applications
+	pgListApps = `SELECT id, json_data FROM %s.applications
 		%s`
 
 	pgOrderCreatedAt = `ORDER BY (json_data->>'created_at')::TIMESTAMP DESC`
@@ -31,29 +30,15 @@ const (
 	pgCreateSchema = `CREATE SCHEMA IF NOT EXISTS %s`
 	pgCreateTable  = `CREATE TABLE IF NOT EXISTS %s.applications (
 	  id SERIAL PRIMARY KEY NOT NULL,
-	  account_id INT NOT NULL,
-	  json_data JSONB NOT NULL,
-	  enabled INT DEFAULT 1 NOT NULL
+	  json_data JSONB NOT NULL
 	)`
 	pgDropTable = `DROP TABLE IF EXISTS %s.applications`
 
-	pgIndexAccuntID = `
-		CREATE INDEX
-			%s
-		ON
-			%s.applications(account_id, id)`
 	pgIndexBackendToken = `
 		CREATE INDEX
 			%s
 		ON
 			%s.applications(((json_data->>'backend_token')::TEXT))
-		WHERE
-			(json_data->>'enabled')::BOOL = true`
-	pgIndexPublicID = `
-		CREATE INDEX
-			%s
-		ON
-			%s.applications(((json_data->>'id')::TEXT))
 		WHERE
 			(json_data->>'enabled')::BOOL = true`
 	pgIndexToken = `
@@ -78,7 +63,7 @@ func (s *pgService) Put(ns string, input *App) (*App, error) {
 	var (
 		now    = time.Now().UTC()
 		query  = pgUpdateApp
-		params = []interface{}{input.OrgID}
+		params = []interface{}{}
 	)
 
 	if err := input.Validate(); err != nil {
@@ -155,9 +140,7 @@ func (s *pgService) Setup(ns string) error {
 	qs := []string{
 		wrapNamespace(pgCreateSchema, ns),
 		wrapNamespace(pgCreateTable, ns),
-		pg.GuardIndex(ns, "app_account_id", pgIndexAccuntID),
 		pg.GuardIndex(ns, "app_backend_token", pgIndexBackendToken),
-		pg.GuardIndex(ns, "app_public_id", pgIndexPublicID),
 		pg.GuardIndex(ns, "app_token", pgIndexToken),
 	}
 
@@ -215,11 +198,11 @@ func (s *pgService) listApps(
 		var (
 			app = &App{}
 
-			id, orgID uint64
-			raw       []byte
+			id  uint64
+			raw []byte
 		)
 
-		err := rows.Scan(&id, &orgID, &raw)
+		err := rows.Scan(&id, &raw)
 		if err != nil {
 			return nil, err
 		}
@@ -230,7 +213,6 @@ func (s *pgService) listApps(
 		}
 
 		app.ID = id
-		app.OrgID = orgID
 
 		as = append(as, app)
 	}
@@ -303,38 +285,6 @@ func convertOpts(opts QueryOptions) (string, []interface{}, error) {
 
 		clauses = append(clauses, clause)
 		params = append(params, *opts.Enabled)
-	}
-
-	if len(opts.OrgIDs) > 0 {
-		ps := []interface{}{}
-
-		for _, id := range opts.OrgIDs {
-			ps = append(ps, id)
-		}
-
-		clause, _, err := sqlx.In(pgClauseOrgIDs, ps)
-		if err != nil {
-			return "", nil, err
-		}
-
-		clauses = append(clauses, clause)
-		params = append(params, ps...)
-	}
-
-	if len(opts.PublicIDs) > 0 {
-		ps := []interface{}{}
-
-		for _, id := range opts.PublicIDs {
-			ps = append(ps, id)
-		}
-
-		clause, _, err := sqlx.In(pgClausePublicIds, ps)
-		if err != nil {
-			return "", nil, err
-		}
-
-		clauses = append(clauses, clause)
-		params = append(params, ps...)
 	}
 
 	if len(opts.Tokens) > 0 {

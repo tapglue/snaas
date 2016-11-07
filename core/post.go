@@ -187,6 +187,31 @@ func PostDelete(
 	}
 }
 
+// PostFetchFunc returns the Post for the given id.
+type PostFetchFunc func(currentApp *app.App, id uint64) (*Post, error)
+
+// PostFetch returns the Post for the given id.
+func PostFetch(objects object.Service) PostFetchFunc {
+	return func(currentApp *app.App, id uint64) (*Post, error) {
+		os, err := objects.Query(currentApp.Namespace(), object.QueryOptions{
+			ID:    &id,
+			Owned: &defaultOwned,
+			Types: []string{
+				TypePost,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(os) != 1 {
+			return nil, ErrNotFound
+		}
+
+		return &Post{Object: os[0]}, nil
+	}
+}
+
 // PostListAllFunc returns all objects which are of type post.
 type PostListAllFunc func(
 	currentApp *app.App,
@@ -439,6 +464,15 @@ func PostUpdate(
 
 		return &Post{Object: o}, nil
 	}
+}
+
+// IsPost indicates if object is a Post.
+func IsPost(o *object.Object) bool {
+	if o.Type != TypePost {
+		return false
+	}
+
+	return o.Owned
 }
 
 func constrainPostRestrictions(origin Origin, restrictions *object.Restrictions) error {

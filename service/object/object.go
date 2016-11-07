@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"golang.org/x/text/language"
 
-	"github.com/asaskevich/govalidator"
-
 	"github.com/tapglue/snaas/platform/service"
+	"github.com/tapglue/snaas/platform/source"
 )
 
 // Attachment variants available for Objects.
@@ -34,11 +34,6 @@ const (
 	VisibilityPublic
 	VisibilityGlobal
 )
-
-// Acker permantly removes the workload from the Source.
-type Acker interface {
-	Ack(id string) error
-}
 
 // Attachment is typed media which belongs to an Object.
 type Attachment struct {
@@ -260,7 +255,7 @@ type StateChange struct {
 
 // Source encapsulates state change notification operations.
 type Source interface {
-	Acker
+	source.Acker
 	Consumer
 	Producer
 }

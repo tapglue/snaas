@@ -306,6 +306,14 @@ func CommentUpdate(
 	}
 }
 
+func IsComment(o *object.Object) bool {
+	if o.Type != TypeComment {
+		return false
+	}
+
+	return o.Owned
+}
+
 func constrainCommentPrivate(origin Origin, private *object.Private) error {
 	if !origin.IsBackend() && private != nil {
 		return wrapError(ErrUnauthorized,

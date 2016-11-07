@@ -179,6 +179,36 @@ func ConnectionDelete(
 	}
 }
 
+// ConnectionFollowerIDsFunc returns the list of ids of users who follow origin.
+type ConnectionFollowerIDsFunc func(
+	currentApp *app.App,
+	origin uint64,
+) ([]uint64, error)
+
+func ConnectionFollowerIDs(
+	connections connection.Service,
+) ConnectionFollowerIDsFunc {
+	return func(currentApp *app.App, origin uint64) ([]uint64, error) {
+		fs, err := connections.Query(currentApp.Namespace(), connection.QueryOptions{
+			Enabled: &defaultEnabled,
+			States: []connection.State{
+				connection.StateConfirmed,
+			},
+			ToIDs: []uint64{
+				origin,
+			},
+			Types: []connection.Type{
+				connection.TypeFollow,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return fs.FromIDs(), nil
+	}
+}
+
 // ConnectionFollowersFunc returns the list of users who follow the origin.
 type ConnectionFollowersFunc func(
 	currentApp *app.App,
@@ -286,6 +316,51 @@ func ConnectionFollowings(
 			Connections: cs,
 			Users:       us,
 		}, nil
+	}
+}
+
+// ConnectionFriendIDsFunc returns the list of ids of users who are friends with
+// origin.
+type ConnectionFriendIDsFunc func(
+	currentApp *app.App,
+	origin uint64,
+) ([]uint64, error)
+
+func ConnectionFriendIDs(connections connection.Service) ConnectionFriendIDsFunc {
+	return func(currentApp *app.App, origin uint64) ([]uint64, error) {
+		fs, err := connections.Query(currentApp.Namespace(), connection.QueryOptions{
+			Enabled: &defaultEnabled,
+			FromIDs: []uint64{
+				origin,
+			},
+			States: []connection.State{
+				connection.StateConfirmed,
+			},
+			Types: []connection.Type{
+				connection.TypeFriend,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		ts, err := connections.Query(currentApp.Namespace(), connection.QueryOptions{
+			Enabled: &defaultEnabled,
+			ToIDs: []uint64{
+				origin,
+			},
+			States: []connection.State{
+				connection.StateConfirmed,
+			},
+			Types: []connection.Type{
+				connection.TypeFriend,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return append(fs.ToIDs(), ts.FromIDs()...), nil
 	}
 }
 
