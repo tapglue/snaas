@@ -11,7 +11,7 @@ const (
 	// NamespaceDefault is the default namespace to isolate top-level data sets.
 	NamespaceDefault = "tg"
 
-	fmtNamespace = "app_%d_%d"
+	fmtNamespace = "app_%d"
 
 	limitProduction = 20000
 	limitStaging    = 100
@@ -25,9 +25,6 @@ type App struct {
 	ID           uint64    `json:"-"`
 	InProduction bool      `json:"in_production"`
 	Name         string    `json:"name"`
-	OrgID        uint64    `json:"-"`
-	PublicID     string    `json:"id"`
-	PublicOrgID  string    `json:"account_id"`
 	Token        string    `json:"token"`
 	URL          string    `json:"url"`
 	CreatedAt    time.Time `json:"created_at"`
@@ -44,10 +41,9 @@ func (a *App) Limit() int64 {
 	return limitStaging
 }
 
-// Namespace is the identifier used to slice and dice data related to a
-// customers app.
+// Namespace is the identifier used to slice and dice data related to a an app.
 func (a *App) Namespace() string {
-	return fmt.Sprintf(fmtNamespace, a.OrgID, a.ID)
+	return fmt.Sprintf(fmtNamespace, a.ID)
 }
 
 func (a *App) Validate() error {
@@ -65,8 +61,6 @@ type QueryOptions struct {
 	IDs           []uint64
 	InProduction  *bool
 	Limit         int
-	OrgIDs        []uint64
-	PublicIDs     []string
 	Tokens        []string
 }
 

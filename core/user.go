@@ -90,6 +90,30 @@ func UserDelete(
 	}
 }
 
+// UserFetchFunc returns the User for the given id.
+type UserFetchFunc func(currentApp *app.App, id uint64) (*user.User, error)
+
+// UserFetch returns the User for the given id.
+func UserFetch(users user.Service) UserFetchFunc {
+	return func(currentApp *app.App, id uint64) (*user.User, error) {
+		us, err := users.Query(currentApp.Namespace(), user.QueryOptions{
+			Enabled: &defaultEnabled,
+			IDs: []uint64{
+				id,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(us) == 0 {
+			return nil, ErrNotFound
+		}
+
+		return us[0], nil
+	}
+}
+
 // UserListByEmailsFunc returns all users for the given emails.
 type UserListByEmailsFunc func(
 	currentApp *app.App,
@@ -446,6 +470,22 @@ func UserUpdate(
 		}
 
 		return u, nil
+	}
+}
+
+// UsersFetchFunc retrieves the users for the given ids.
+type UsersFetchFunc func(currentApp *app.App, ids ...uint64) (user.List, error)
+
+func UsersFetch(users user.Service) UsersFetchFunc {
+	return func(currentApp *app.App, ids ...uint64) (user.List, error) {
+		if len(ids) == 0 {
+			return user.List{}, nil
+		}
+
+		return users.Query(currentApp.Namespace(), user.QueryOptions{
+			Enabled: &defaultEnabled,
+			IDs:     ids,
+		})
 	}
 }
 

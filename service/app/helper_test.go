@@ -18,9 +18,6 @@ func testApp() *App {
 		InProduction: false,
 		Enabled:      true,
 		Name:         generate.RandomString(8),
-		OrgID:        1,
-		PublicID:     generate.RandomString(16),
-		PublicOrgID:  generate.RandomString(16),
 		Token:        generate.RandomString(8),
 	}
 }
@@ -34,7 +31,6 @@ func testList() List {
 
 	for i := 0; i < 5; i++ {
 		a := testApp()
-		a.OrgID = 2
 
 		as = append(as, a)
 	}
@@ -127,11 +123,9 @@ func testServiceQuery(t *testing.T, p prepareFunc) {
 	}
 
 	cases := map[*QueryOptions]int{
-		&QueryOptions{}:                                              15,
-		&QueryOptions{OrgIDs: []uint64{2}}:                           5,
+		&QueryOptions{}: 15,
 		&QueryOptions{BackendTokens: []string{created.BackendToken}}: 1,
 		&QueryOptions{IDs: []uint64{created.ID}}:                     1,
-		&QueryOptions{PublicIDs: []string{created.PublicID}}:         1,
 		&QueryOptions{Tokens: []string{created.Token}}:               1,
 	}
 

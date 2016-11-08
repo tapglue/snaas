@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/tapglue/snaas/platform/service"
+	"github.com/tapglue/snaas/platform/source"
 )
 
 // Supported states for connections.
@@ -18,11 +19,6 @@ const (
 	TypeFollow Type = "follow"
 	TypeFriend Type = "friend"
 )
-
-// Acker permantly removes the workload from the Source.
-type Acker interface {
-	Ack(id string) error
-}
 
 // Connection represents a relation between two users.
 type Connection struct {
@@ -149,7 +145,7 @@ type StateChange struct {
 
 // Source encapsulates state change notification operations.
 type Source interface {
-	Acker
+	source.Acker
 	Consumer
 	Producer
 }

@@ -75,8 +75,7 @@ var (
 
 func main() {
 	var (
-		begin       = time.Now()
-		hostname, _ = os.Hostname()
+		begin = time.Now()
 
 		awsID         = flag.String("aws.id", "", "Identifier for AWS requests")
 		awsRegion     = flag.String("aws.region", "us-east-1", "AWS Region to operate in")

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/tapglue/snaas/platform/service"
+	"github.com/tapglue/snaas/platform/source"
 )
 
 // Predefined time periods to use for aggregates.
@@ -29,11 +30,6 @@ const (
 	TypeFollow = "tg_follow"
 	TypeFriend = "tg_friend"
 )
-
-// Acker permantly removes the workload from the Source.
-type Acker interface {
-	Ack(id string) error
-}
 
 // Consumer observes state changes.
 type Consumer interface {
@@ -188,7 +184,7 @@ type StateChange struct {
 
 // Source encapsulates state change notifications operations.
 type Source interface {
-	Acker
+	source.Acker
 	Consumer
 	Producer
 }
