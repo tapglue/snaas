@@ -52,7 +52,7 @@ func main() {
 		begin = time.Now()
 		pApps = platformApps{}
 
-		awsKey        = flag.String("aws.key", "", "Identifier for AWS requests")
+		awsID         = flag.String("aws.id", "", "Identifier for AWS requests")
 		awsRegion     = flag.String("aws.region", "us-east-1", "AWS region to operate in")
 		awsSecret     = flag.String("aws.secret", "", "Identification secret for AWS requests")
 		postgresURL   = flag.String("postgres.url", "", "Postgres URL to connect to")
@@ -131,7 +131,7 @@ func main() {
 	// Setup clients.
 	var (
 		aSession = awsSession.New(&aws.Config{
-			Credentials: credentials.NewStaticCredentials(*awsKey, *awsSecret, ""),
+			Credentials: credentials.NewStaticCredentials(*awsID, *awsSecret, ""),
 			Region:      aws.String(*awsRegion),
 		})
 		snsAPI = sns.New(aSession)
