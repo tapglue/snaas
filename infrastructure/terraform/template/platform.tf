@@ -1,7 +1,8 @@
 resource "aws_instance" "monitoring" {
-  ami             = "${var.ami["monitoring"]}"
+  ami             = "${var.ami_minimal["${var.region}"]}"
   instance_type   = "t2.medium"
-  security_groups = [
+  key_name        = "${aws_key_pair.access.key_name}"
+  vpc_security_group_ids = [
     "${aws_security_group.platform.id}",
   ]
   subnet_id       = "${aws_subnet.platform-a.id}"
@@ -85,9 +86,9 @@ resource "aws_launch_configuration" "service" {
   associate_public_ip_address = false
   ebs_optimized               = false
   enable_monitoring           = true
-  key_name                    = "${aws_key_pair.debug.key_name}"
+  key_name                    = "${aws_key_pair.access.key_name}"
   iam_instance_profile        = "${aws_iam_instance_profile.ecs-agent-profile.name}"
-  image_id                    = "${var.ami["ecs-agent"]}"
+  image_id                    = "${var.ami_ecs_agent["${var.region}"]}"
   instance_type               =  "m4.large"
   name_prefix                 = "ecs-service-"
   security_groups             = [

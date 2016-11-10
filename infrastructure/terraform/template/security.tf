@@ -93,7 +93,7 @@ EOF
 }
 
 resource "aws_iam_role" "rds-monitoring" {
-  name                = "rds-monitoring"
+  name                = "rds-monitoring-${var.env}-${var.region}"
   assume_role_policy  = <<EOF
 {
   "Version": "2012-10-17",
@@ -111,40 +111,12 @@ resource "aws_iam_role" "rds-monitoring" {
 EOF
 }
 
-resource "aws_iam_role_policy" "rds-monitoring" {
-  name    = "rds-monitoring"
-  role    = "${aws_iam_role.rds-monitoring.id}"
-  policy  = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-      {
-          "Sid": "EnableCreationAndManagementOfRDSCloudwatchLogGroups",
-          "Effect": "Allow",
-          "Action": [
-              "logs:CreateLogGroup",
-              "logs:PutRetentionPolicy"
-          ],
-          "Resource": [
-              "arn:aws:logs:*:*:log-group:RDS*"
-          ]
-      },
-      {
-          "Sid": "EnableCreationAndManagementOfRDSCloudwatchLogStreams",
-          "Effect": "Allow",
-          "Action": [
-              "logs:CreateLogStream",
-              "logs:PutLogEvents",
-              "logs:DescribeLogStreams",
-              "logs:GetLogEvents"
-          ],
-          "Resource": [
-              "arn:aws:logs:*:*:log-group:RDS*:log-stream:*"
-          ]
-      }
+resource "aws_iam_policy_attachment" "rds-monitoring" {
+  name        = "rds-monitoring-${var.env}-${var.region}"
+  policy_arn  = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+  roles       = [
+    "${aws_iam_role.rds-monitoring.name}",
   ]
-}
-EOF
 }
 
 resource "aws_iam_instance_profile" "ecs-agent-profile" {
@@ -164,18 +136,18 @@ resource "aws_security_group" "perimeter" {
   }
 }
 
-resource "aws_key_pair" "debug" {
-  key_name    = "debug"
-  public_key  = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCuFsJxH52k7iI4mseWljlbQhwIfbpVPuDCTOBo6YtI7xL3f3jfme4fqziwt+iqavRW2MgGsgoYGITNYstZa5zzT4Zo6CTZ0XpeLYZrrXQOxXrXjesRA478bCsU4gpCrPiy5Uzw3e2d1HLF/deLjnmREshzqaEQKoL8tzG51esBTIna+M5aWD0AGPFotO3J2sFTRnbAIxeVj4bKWAfaE2+WG1MX1VemDGeGrHmW6UbPoymHOD7Y5c/F00Bv+Pgk5LwCyRCvEzMLbl2GHpEJd3vcouwEToyADlN1rXc+85SfVtlwS8F3fX6vqjQ/2fMzG4syaDEeUJLsBcE2glNIwDH/ debug"
+resource "aws_key_pair" "access" {
+  key_name    = "access"
+  public_key  = "${var.key["access"]}"
 }
 
 resource "aws_iam_user" "state-change-sr" {
-  name  = "state-change-sr"
+  name  = "state-change-sr-${var.env}-${var.region}"
   path  = "/"
 }
 
 resource "aws_iam_user_policy" "state-change-sr" {
-  name  = "state-change-sr"
+  name  = "state-change-sr-${var.env}-${var.region}"
   user  = "${aws_iam_user.state-change-sr.name}"
   policy  = <<EOF
 {

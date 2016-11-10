@@ -85,7 +85,7 @@ resource "aws_db_parameter_group" "service-master" {
   }
 
   parameter {
-    apply_method = "immediate"
+    apply_method = "pending-reboot"
     name         = "max_connections"
     value        = "256"
   }
@@ -117,8 +117,8 @@ resource "aws_db_instance" "service-master" {
   engine_version            = "9.5.4"
   instance_class            = "db.r3.xlarge"
   maintenance_window        = "sat:05:00-sat:06:30"
-  monitoring_interval       = 1
-  monitoring_role_arn       = "${aws_iam_role.rds-monitoring.arn}"
+  # monitoring_interval       = 1
+  # monitoring_role_arn       = "${aws_iam_role.rds-monitoring.arn}"
   multi_az                  = true
   parameter_group_name      = "${aws_db_parameter_group.service-master.id}"
   publicly_accessible       = false

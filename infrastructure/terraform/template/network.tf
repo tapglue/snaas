@@ -121,12 +121,13 @@ resource "aws_route_table_association" "platform-b" {
 }
 
 resource "aws_instance" "bastion" {
-  ami             = "${var.ami["bastion"]}"
-  instance_type   = "t2.medium"
-  security_groups = [
+  ami                     = "${var.ami_minimal["${var.region}"]}"
+  instance_type           = "t2.medium"
+  key_name                = "${aws_key_pair.access.key_name}"
+  vpc_security_group_ids  = [
     "${aws_security_group.perimeter.id}",
   ]
-  subnet_id       = "${aws_subnet.perimeter-a.id}"
+  subnet_id               = "${aws_subnet.perimeter-a.id}"
 
   tags {
     Name = "bastion"
