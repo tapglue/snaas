@@ -15,7 +15,6 @@ import (
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
 	"github.com/tapglue/snaas/service/user"
-	v04_core "github.com/tapglue/multiverse/v04/core"
 )
 
 const (
@@ -126,8 +125,22 @@ func extractConnectionOpts(r *http.Request) (connection.QueryOptions, error) {
 	return connection.QueryOptions{}, nil
 }
 
+type condition struct {
+	EQ string   `json:"eq"`
+	IN []string `json:"in"`
+}
+
+type eventCondition struct {
+	Object *struct {
+		ID   *condition `json:"id,omitempty"`
+		Type *condition `json:"type,omitempty"`
+	} `json:"object,omitempty"`
+	Type *condition `json:"type,omitempty"`
+}
+
 func extractEventOpts(r *http.Request) (event.QueryOptions, error) {
 	var (
+		cond  = eventCondition{}
 		opts  = event.QueryOptions{}
 		param = r.URL.Query().Get(keyWhere)
 	)
@@ -136,90 +149,44 @@ func extractEventOpts(r *http.Request) (event.QueryOptions, error) {
 		return opts, nil
 	}
 
-	cond, errs := v04_core.NewEventFilter(param)
-	if errs != nil {
-		return opts, errs[0]
-	}
-
-	if cond == nil {
-		return opts, nil
+	err := json.Unmarshal([]byte(param), &cond)
+	if err != nil {
+		return opts, err
 	}
 
 	if cond.Object != nil && cond.Object.ID != nil {
-		if cond.Object.ID.Eq != nil {
-			id, err := parseID(cond.Object.ID.Eq)
-			if err != nil {
-				return opts, err
-			}
-
+		if cond.Object.ID.EQ != "" {
 			opts.ExternalObjectIDs = []string{
-				id,
+				cond.Object.ID.EQ,
 			}
 		}
 
-		if cond.Object.ID.In != nil {
-			opts.ExternalObjectIDs = []string{}
-
-			for _, input := range cond.Object.ID.In {
-				id, err := parseID(input)
-				if err != nil {
-					return opts, err
-				}
-
-				opts.ExternalObjectIDs = append(opts.ExternalObjectIDs, id)
-			}
+		if cond.Object.ID.IN != nil {
+			opts.ExternalObjectIDs = cond.Object.ID.IN
 		}
 	}
 
 	if cond.Object != nil && cond.Object.Type != nil {
-		if cond.Object.Type.Eq != nil {
-			t, ok := cond.Object.Type.Eq.(string)
-			if !ok {
-				return opts, fmt.Errorf("error in where param")
-			}
-
+		if cond.Object.Type.EQ != "" {
 			opts.ExternalObjectTypes = []string{
-				t,
+				cond.Object.Type.EQ,
 			}
 		}
 
-		if cond.Object.Type.In != nil {
-			opts.ExternalObjectTypes = []string{}
-
-			for _, input := range cond.Object.Type.In {
-				t, ok := input.(string)
-				if !ok {
-					return opts, fmt.Errorf("error in where param")
-				}
-
-				opts.ExternalObjectTypes = append(opts.ExternalObjectTypes, t)
-			}
+		if cond.Object.Type.IN != nil {
+			opts.ExternalObjectTypes = cond.Object.Type.IN
 		}
 	}
 
 	if cond.Type != nil {
-		if cond.Type.Eq != nil {
-			t, ok := cond.Type.Eq.(string)
-			if !ok {
-				return opts, fmt.Errorf("error in where param")
-			}
-
+		if cond.Type.EQ != "" {
 			opts.Types = []string{
-				t,
+				cond.Type.EQ,
 			}
 		}
 
-		if cond.Type.In != nil {
-			opts.Types = []string{}
-
-			for _, input := range cond.Type.In {
-				t, ok := input.(string)
-				if !ok {
-					return opts, fmt.Errorf("error in where param")
-				}
-
-				opts.Types = append(opts.Types, t)
-			}
+		if cond.Type.IN != nil {
+			opts.Types = cond.Type.IN
 		}
 	}
 

@@ -1,0 +1,24 @@
+machine:
+  pre:
+    - sudo curl -L -o /usr/bin/docker 'https://s3-external-1.amazonaws.com/circle-downloads/docker-1.9.1-circleci'
+    - sudo chmod 0755 /usr/bin/docker
+  environment:
+    GOOROT: /home/ubuntu/.gimme/versions/go1.7.linux.amd64
+  services:
+    - docker
+    - redis
+    - postgresql
+dependencies:
+  cache_directories:
+    - "/home/ubuntu/.go_workspace"
+    - "/home/ubuntu/.gimme"
+  override:
+    - ./infrastructure/scripts/dependencies
+  pre:
+    - echo "" > ~/.gitconfig
+database:
+  override:
+    - PGPASSWORD=unicode psql -U ubuntu -d circle_test -f platform/pg/setup.sql -h 127.0.0.1
+test:
+  override:
+    - ./infrastructure/scripts/execute-tests

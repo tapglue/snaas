@@ -3,10 +3,10 @@ infrastructure:
  ✔ monitoring ami and key @done (16-11-09 18:43)
  ✔ bastion ami and key @done (16-11-09 18:43)
  ✔ fix new resource force on ec2 instances @done (16-11-09 21:42)
+ ✔ setup circle integration @done (16-11-10 19:50)
  ☐ require ssh key during setup
  ☐ generate pg password during setup
  ☐ docker foundation
- ☐ setup circle integration
  ☐ gateway-http Dockerfile
  ☐ sims Dockerfile
  ☐ publish docker artifacts to DockerHub
