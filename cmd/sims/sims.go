@@ -32,7 +32,7 @@ const (
 	component        = "sims"
 	namespaceService = "service"
 	namespaceSource  = "source"
-	source           = "sqs"
+	sourceService    = "sqs"
 	storeService     = "postgres"
 	subsystemQueue   = "queue"
 )
@@ -208,13 +208,13 @@ func main() {
 	}
 	conSource = connection.InstrumentSourceMiddleware(
 		component,
-		source,
+		sourceService,
 		sourceErrCount,
 		sourceOpCount,
 		sourceOpLatency,
 		sourceQueueLatency,
 	)(conSource)
-	conSource = connection.LogSourceMiddleware(source, logger)(conSource)
+	conSource = connection.LogSourceMiddleware(sourceService, logger)(conSource)
 
 	eventSource, err := event.SQSSource(sqsAPI)
 	if err != nil {
@@ -223,13 +223,13 @@ func main() {
 	}
 	eventSource = event.InstrumentSourceMiddleware(
 		component,
-		source,
+		sourceService,
 		sourceErrCount,
 		sourceOpCount,
 		sourceOpLatency,
 		sourceQueueLatency,
 	)(eventSource)
-	eventSource = event.LogSourceMiddleware(source, logger)(eventSource)
+	eventSource = event.LogSourceMiddleware(sourceService, logger)(eventSource)
 
 	objectSource, err := object.SQSSource(sqsAPI)
 	if err != nil {
@@ -238,13 +238,13 @@ func main() {
 	}
 	objectSource = object.InstrumentSourceMiddleware(
 		component,
-		source,
+		sourceService,
 		sourceErrCount,
 		sourceOpCount,
 		sourceOpLatency,
 		sourceQueueLatency,
 	)(objectSource)
-	objectSource = object.LogSourceMiddleware(source, logger)(objectSource)
+	objectSource = object.LogSourceMiddleware(sourceService, logger)(objectSource)
 
 	logger.Log(
 		"duration", time.Now().Sub(begin).Nanoseconds(),

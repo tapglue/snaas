@@ -8,6 +8,7 @@ import (
 
 	"github.com/tapglue/snaas/core"
 	"github.com/tapglue/snaas/platform/sns"
+	"github.com/tapglue/snaas/platform/source"
 	platformSQS "github.com/tapglue/snaas/platform/sqs"
 	"github.com/tapglue/snaas/service/app"
 	"github.com/tapglue/snaas/service/connection"
@@ -224,7 +225,7 @@ func consumeObject(
 
 func batchMessages(
 	currentApp *app.App,
-	acker platformSQS.Acker,
+	acker source.Acker,
 	ackID string,
 	ms messages,
 ) batch {

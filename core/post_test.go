@@ -395,8 +395,7 @@ func testPostSet(ownerID uint64) []*object.Object {
 
 func testSetupPost() (*app.App, *user.User) {
 	return &app.App{
-			ID:    uint64(rand.Int63()),
-			OrgID: uint64(rand.Int63()),
+			ID: uint64(rand.Int63()),
 		}, &user.User{
 			ID: uint64(rand.Int63()),
 		}

@@ -88,8 +88,7 @@ func TestPassword(t *testing.T) {
 
 func testSetupUser() *app.App {
 	return &app.App{
-		ID:    uint64(rand.Int63()),
-		OrgID: uint64(rand.Int63()),
+		ID: uint64(rand.Int63()),
 	}
 }
 
