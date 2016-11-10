@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+echo "|> prepare env"
+export CWD=$(pwd)
+export REVISION=$(git rev-parse --short HEAD)
+source ~/.gimme/envs/gotip.env
+cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
+
+echo "|> build gateway-http"
+go build \
+	-ldflags "-X main.revision=${REVISION}" \
+	-o gateway-http_${CIRCLE_BUILD_NUM} \
+	cmd/gateway-http/*.go
+
+echo "|> build sims"
+go build \
+	-ldflags "-X main.revision=${REVISION}" \
+	-o sims_${CIRCLE_BUILD_NUM} \
+	cmd/sims/*.go
+
+echo "|> build container"
+docker build \
+	-f ${CWD}/infrastructure/docker/snaas.docker \
+    -t tapglue/snaas:${CIRCLE_BUILD_NUM} \
+    --build-arg GATEWAY_HTTP_BINARY=gateway-http_${CIRCLE_BUILD_NUM} \
+    --build-arg SIMS_BINARY=sims_${CIRCLE_BUILD_NUM} \
+    ${CWD}

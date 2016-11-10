@@ -1,7 +1,4 @@
 machine:
-  pre:
-    - sudo curl -L -o /usr/bin/docker 'https://s3-external-1.amazonaws.com/circle-downloads/docker-1.9.1-circleci'
-    - sudo chmod 0755 /usr/bin/docker
   environment:
     GOOROT: /home/ubuntu/.gimme/versions/go1.7.linux.amd64
   services:
@@ -22,3 +19,10 @@ database:
 test:
   override:
     - ./infrastructure/scripts/execute-tests
+deployment:
+  docker:
+    branch: master
+    commands:
+      - ./infrastructure/scripts/build-container
+      - docker login -e ${DOCKERHUB_EMAIL} -p ${DOCKERHUB_PASSWORD} -u ${DOCKERHUB_USERNAME}
+      - docker push tapglue/snaas
