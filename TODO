@@ -4,16 +4,16 @@ infrastructure:
  ✔ bastion ami and key @done (16-11-09 18:43)
  ✔ fix new resource force on ec2 instances @done (16-11-09 21:42)
  ✔ setup circle integration @done (16-11-10 19:50)
+ ✔ docker foundation @done (16-11-10 22:14)
+ ✔ gateway-http Dockerfile @done (16-11-10 22:14)
+ ✔ sims Dockerfile @done (16-11-10 22:14)
+ ✔ publish docker artifacts to DockerHub @done (16-11-10 22:14)
  ☐ require ssh key during setup
  ☐ generate pg password during setup
- ☐ docker foundation
- ☐ gateway-http Dockerfile
- ☐ sims Dockerfile
- ☐ publish docker artifacts to DockerHub
- ☐ setup prometheus and grafana
  ☐ fix pg monitoring role
  ☐ setup grafana and prometheus on monitoring host
 
 code:
  ☐ move event condition code
  ☐ add missing event indeces
+ ☐ enable TLS and load certs
