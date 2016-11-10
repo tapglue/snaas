@@ -185,7 +185,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		fmt.Println("Want to apply the plan? (type 'yes')")
+		fmt.Println("\nWant to apply the plan? (type 'yes')")
 		fmt.Print("(no) |> ")
 
 		response := "no"

@@ -1,0 +1,19 @@
+infrastructure:
+ ✔ finish terraform PR @done (16-11-09 12:19) https://github.com/tapglue/snaas/pull/5
+ ✔ monitoring ami and key @done (16-11-09 18:43)
+ ✔ bastion ami and key @done (16-11-09 18:43)
+ ✔ fix new resource force on ec2 instances @done (16-11-09 21:42)
+ ☐ require ssh key during setup
+ ☐ generate pg password during setup
+ ☐ docker foundation
+ ☐ setup circle integration
+ ☐ gateway-http Dockerfile
+ ☐ sims Dockerfile
+ ☐ publish docker artifacts to DockerHub
+ ☐ setup prometheus and grafana
+ ☐ fix pg monitoring role
+ ☐ setup grafana and prometheus on monitoring host
+
+code:
+ ☐ move event condition code
+ ☐ add missing event indeces
