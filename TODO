@@ -8,12 +8,12 @@ infrastructure:
  ✔ gateway-http Dockerfile @done (16-11-10 22:14)
  ✔ sims Dockerfile @done (16-11-10 22:14)
  ✔ publish docker artifacts to DockerHub @done (16-11-10 22:14)
- ☐ require ssh key during setup
- ☐ generate pg password during setup
+ ✔ require ssh key during setup @done (16-11-11 11:10)
+ ✔ generate pg password during setup @done (16-11-11 11:10)
  ☐ fix pg monitoring role
  ☐ setup grafana and prometheus on monitoring host
 
 code:
- ☐ move event condition code
+ ✔ move event condition code @done (16-11-11 11:10)
  ☐ add missing event indeces
  ☐ enable TLS and load certs
