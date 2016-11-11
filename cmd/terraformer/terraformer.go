@@ -3,15 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"text/template"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
+
+	"github.com/tapglue/snaas/platform/generate"
 )
 
 const (
@@ -40,6 +44,13 @@ const (
 	tfCmdDestroy = "destroy"
 	tfCmdPlan    = "plan"
 
+	tplTFVars = `
+key = {
+	access = "{{.KeyAccess}}"
+}
+pg_password = "{{.PGPassword}}"
+`
+
 	varAccount = "account"
 	varEnv     = "env"
 	varRegion  = "region"
@@ -48,7 +59,8 @@ const (
 func main() {
 	var (
 		env          = flag.String("env", "", "Environment used for isolation.")
-		region       = flag.String("region", "", "AWS region to deploy to")
+		region       = flag.String("region", "", "AWS region to deploy to.")
+		sshPath      = flag.String("ssh.path", "", "Location of SSH public key to use for setup.")
 		statesPath   = flag.String("states.path", defaultStatesPath, "Location to store env states.")
 		templatePath = flag.String("template.path", defaultTemplatePath, "Location of the infrastructure template.")
 		tmpPath      = flag.String("tmp.path", defaultTmpPath, "Location for temporary output like plans.")
@@ -99,6 +111,15 @@ func main() {
 
 	switch flag.Args()[0] {
 	case cmdSetup:
+		if _, err := os.Stat(*sshPath); err != nil {
+			log.Fatalf("couldn't locate ssh public key: %s", err)
+		}
+
+		keyRaw, err := ioutil.ReadFile(*sshPath)
+		if err != nil {
+			log.Fatalf("ssh key read failed: %s", err)
+		}
+
 		if _, err := os.Stat(stateFile); err == nil {
 			log.Fatalf("state file already exists: %s", stateFile)
 		}
@@ -112,7 +133,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			_, err := os.Create(varFile)
+			err := generateVarFile(varFile, string(keyRaw), generate.RandomString(32))
 			if err != nil {
 				log.Fatalf("var file create failed: %s", err)
 			}
@@ -227,6 +248,28 @@ func awsAcoount(region string) (string, error) {
 	}
 
 	return *res.Account, nil
+}
+
+func generateVarFile(path, keyAccess, pgPassword string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+
+	tmpl, err := template.New("vars").Parse(tplTFVars)
+	if err != nil {
+		return err
+	}
+
+	tmpl.Execute(f, struct {
+		KeyAccess  string
+		PGPassword string
+	}{
+		KeyAccess:  keyAccess,
+		PGPassword: pgPassword,
+	})
+
+	return nil
 }
 
 func prepareCmd(environ []string, command string, args ...string) *exec.Cmd {
