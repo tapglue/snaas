@@ -43,6 +43,67 @@ const (
 		json_data JSONB NOT NULL
 	)`
 	pgDropTable = `DROP TABLE IF EXISTS %s.events`
+
+	pgIndexCreatedAt = `
+		CREATE INDEX
+			%s
+		ON
+			%s.events
+		USING
+			btree ((json_data->>'created_at') DESC)`
+	pgIndexID = `
+		CREATE INDEX
+			%s
+		ON
+			%s.events
+		USING
+			btree (((json_data->>'id')::BIGINT))`
+	pgIndexLikes = `
+		CREATE INDEX
+			%s
+		ON
+			%s.events
+		USING
+			btree (((json_data->>'obejct_id')::BIGINT), ((json_data->>'created_at')) DESC)
+		WHERE
+			(json_data->>'enabled')::BOOL = true
+			AND (json_data->>'owned')::BOOL = true
+			AND (json_data->>'type')::TEXT = 'tg_like'`
+	pgIndexObjectID = `
+		CREATE INDEX
+			%s
+		ON
+			%s.events
+		USING
+			btree (((json_data->>'object_id')::BIGINT))`
+	pgIndexOwned = `
+		CREATE INDEX
+			%s
+		ON
+			%s.events
+		USING
+			btree (((json_data->>'owned')::BOOL))`
+	pgIndexType = `
+		CREATE INDEX
+			%s
+		ON
+			%s.events
+		USING
+			btree (((json_data->>'type')::TEXT))`
+	pgIndexUserID = `
+		CREATE INDEX
+			%s
+		ON
+			%s.events
+		USING
+			btree (((json_data->>'user_id')::BIGINT))`
+	pgIndexVisibility = `
+		CREATE INDEX
+			%s
+		ON
+			%s.events
+		USING
+			btree (((json_data->>'visibility')::INT))`
 )
 
 type pgService struct {
@@ -144,6 +205,14 @@ func (s *pgService) Setup(ns string) error {
 	qs := []string{
 		wrapNamespace(pgCreateSchema, ns),
 		wrapNamespace(pgCreateTable, ns),
+		pg.GuardIndex(ns, "event_created_at", pgIndexCreatedAt),
+		pg.GuardIndex(ns, "event_id", pgIndexID),
+		pg.GuardIndex(ns, "event_likes", pgIndexLikes),
+		pg.GuardIndex(ns, "event_object_id", pgIndexObjectID),
+		pg.GuardIndex(ns, "event_owned", pgIndexOwned),
+		pg.GuardIndex(ns, "event_type", pgIndexType),
+		pg.GuardIndex(ns, "event_user_id", pgIndexUserID),
+		pg.GuardIndex(ns, "event_visibility", pgIndexVisibility),
 	}
 
 	for _, query := range qs {
