@@ -70,8 +70,8 @@ variable "pg_password" {
 
 variable "version" {
   default     = {
-    "gateway-http" = "1"
-    "sims" = "1"
+    "gateway-http" = "34"
+    "sims" = "34"
   }
   description = "Versions used for deployed services"
   type        = "map"
