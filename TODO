@@ -15,5 +15,5 @@ infrastructure:
 
 code:
  ✔ move event condition code @done (16-11-11 11:10)
- ☐ add missing event indeces
+ ✔ add missing event indeces @done (16-11-12 12:36)
  ☐ enable TLS and load certs
