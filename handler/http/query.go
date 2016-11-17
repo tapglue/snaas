@@ -19,16 +19,18 @@ import (
 
 const (
 	cursorTimeFormat = time.RFC3339Nano
-	defaultLimit     = 100
-	keyCommentID     = "commentID"
-	keyCursorAfter   = "after"
-	keyCursorBefore  = "before"
-	keyLimit         = "limit"
-	keyPostID        = "postID"
-	keyState         = "state"
-	keyUserID        = "userID"
-	keyWhere         = "where"
-	maxLimit         = 100
+
+	keyCommentID    = "commentID"
+	keyCursorAfter  = "after"
+	keyCursorBefore = "before"
+	keyLimit        = "limit"
+	keyPostID       = "postID"
+	keyState        = "state"
+	keyUserID       = "userID"
+	keyWhere        = "where"
+
+	limitDefault = 25
+	limitMax     = 50
 
 	refFmt = "%s://%s%s?limit=%d&%s"
 )
@@ -219,7 +221,7 @@ func extractLimit(r *http.Request) (int, error) {
 	param := r.URL.Query().Get(keyLimit)
 
 	if param == "" {
-		return defaultLimit, nil
+		return limitDefault, nil
 	}
 
 	limit, err := strconv.Atoi(param)
@@ -227,8 +229,8 @@ func extractLimit(r *http.Request) (int, error) {
 		return 0, err
 	}
 
-	if limit > maxLimit {
-		return maxLimit, nil
+	if limit > limitMax {
+		return limitMax, nil
 	}
 
 	return limit, nil
