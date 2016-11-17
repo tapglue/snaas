@@ -12,4 +12,4 @@ ADD infrastructure/certs/self/self.crt /tapglue/self.crt
 ADD infrastructure/certs/self/self.key /tapglue/self.key
 
 ADD $GATEWAY_HTTP_BINARY /tapglue/gateway-http
-ADD $SIMS /tapglue/sims
+ADD $SIMS_BINARY /tapglue/sims

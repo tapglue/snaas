@@ -3,9 +3,6 @@
 set -e
 set -o pipefail
 
-echo "|> prepare env"
-export CWD=$(pwd)
-
 echo "|> install gimme"
 sudo curl -sL -o /usr/local/bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 sudo chmod +x /usr/local/bin/gimme
@@ -16,11 +13,9 @@ source ~/.gimme/envs/gotip.env
 
 echo "|> prepare directories"
 mkdir -p /home/ubuntu/.go_workspace/src/github.com/tapglue
-ln -nfs /home/ubuntu/snaas /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
+rm -rf /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
+cp -R /home/ubuntu/snaas /home/ubuntu/.go_workspace/src/github.com/tapglue/
 
 echo "|> install packages"
-cd /home/ubuntu/snaas /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
-which go
-go version
-go env
+cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
 go get -d -v ./...

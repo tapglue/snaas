@@ -7,10 +7,6 @@ echo "|> prepare env"
 export CWD=$(pwd)
 source ~/.gimme/envs/gotip.env
 
-echo "|> prepare directories"
-mkdir -p /home/ubuntu/.go_workspace/src/github.com/tapglue
-ln -nfs /home/ubuntu/snaas /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
-
 echo "|> execute tests"
 cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
 go test \
