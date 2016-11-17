@@ -1,20 +1,23 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"text/template"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
+	"golang.org/x/crypto/ssh"
 
 	"github.com/tapglue/snaas/platform/generate"
 )
@@ -31,6 +34,7 @@ const (
 	cmdTeardown = "teardown"
 	cmdUpdate   = "update"
 
+	defaultKeyPath      = "access.pem"
 	defaultStatesPath   = "infrastructure/terraform/states"
 	defaultTemplatePath = "infrastructure/terraform/template"
 	defaultTmpPath      = "/tmp"
@@ -61,7 +65,6 @@ func main() {
 	var (
 		env          = flag.String("env", "", "Environment used for isolation.")
 		region       = flag.String("region", "", "AWS region to deploy to.")
-		sshPath      = flag.String("ssh.path", "", "Location of SSH public key to use for setup.")
 		statesPath   = flag.String("states.path", defaultStatesPath, "Location to store env states.")
 		templatePath = flag.String("template.path", defaultTemplatePath, "Location of the infrastructure template.")
 		tmpPath      = flag.String("tmp.path", defaultTmpPath, "Location for temporary output like plans.")
@@ -112,15 +115,6 @@ func main() {
 
 	switch flag.Args()[0] {
 	case cmdSetup:
-		if _, err := os.Stat(*sshPath); err != nil {
-			log.Fatalf("couldn't locate ssh public key: %s", err)
-		}
-
-		keyRaw, err := ioutil.ReadFile(*sshPath)
-		if err != nil {
-			log.Fatalf("ssh key read failed: %s", err)
-		}
-
 		if _, err := os.Stat(stateFile); err == nil {
 			log.Fatalf("state file already exists: %s", stateFile)
 		}
@@ -134,8 +128,12 @@ func main() {
 				log.Fatal(err)
 			}
 
-			err := generateVarFile(varFile, string(keyRaw), generate.RandomString(32))
+			pubKey, err := generateKeyPair(filepath.Join(statePath, defaultKeyPath))
 			if err != nil {
+				log.Fatal(err)
+			}
+
+			if err = generateVarFile(varFile, pubKey, generate.RandomString(32)); err != nil {
 				log.Fatalf("var file create failed: %s", err)
 			}
 		}
@@ -251,7 +249,35 @@ func awsAcoount(region string) (string, error) {
 	return *res.Account, nil
 }
 
-func generateVarFile(path, keyAccess, pgPassword string) error {
+func generateKeyPair(privateKeyPath string) ([]byte, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	if err != nil {
+		return nil, err
+	}
+
+	privateFile, err := os.Create(privateKeyPath)
+	if err != nil {
+		return nil, err
+	}
+	defer privateFile.Close()
+
+	privatePEM := &pem.Block{
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+		Type:  "RSA PRIVATE KEY",
+	}
+	if err := pem.Encode(privateFile, privatePEM); err != nil {
+		return nil, err
+	}
+
+	pub, err := ssh.NewPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return ssh.MarshalAuthorizedKey(pub), nil
+}
+
+func generateVarFile(path string, accessKeyPub []byte, pgPassword string) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return err
@@ -266,7 +292,7 @@ func generateVarFile(path, keyAccess, pgPassword string) error {
 		KeyAccess  string
 		PGPassword string
 	}{
-		KeyAccess:  strings.Trim(keyAccess, "\n"),
+		KeyAccess:  string(accessKeyPub),
 		PGPassword: pgPassword,
 	})
 
