@@ -30,7 +30,7 @@ resource "aws_ecs_task_definition" "gateway-http" {
       "-aws.secret", "${aws_iam_access_key.state-change-sr.secret}",
       "-aws.region", "${var.region}",
       "-postgres.url", "postgres://${var.pg_username}:${var.pg_password}@${aws_route53_record.service-master.fqdn}:5432/${var.pg_db_name}?connect_timeout=5&sslmode=require",
-      "-redis.addr", "${aws_route53_record.ratelimiter-cache.fqdn}",
+      "-redis.addr", "${aws_route53_record.ratelimiter-cache.fqdn}:6379",
       "-source", "sqs"
     ],
     "cpu": 1024,
