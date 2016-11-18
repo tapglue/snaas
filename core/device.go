@@ -185,8 +185,8 @@ func DeviceUpdate(devices device.Service) DeviceUpdateFunc {
 	) error {
 		ds, err := devices.Query(currentApp.Namespace(), device.QueryOptions{
 			Deleted: &defaultDeleted,
-			DeviceIDs: []string{
-				deviceID,
+			Platforms: []device.Platform{
+				platform,
 			},
 			UserIDs: []uint64{
 				origin.UserID,
@@ -196,26 +196,24 @@ func DeviceUpdate(devices device.Service) DeviceUpdateFunc {
 			return err
 		}
 
-		if len(ds) > 0 && ds[0].Token == token {
-			return nil
-		}
+		d := &device.Device{}
 
-		var d *device.Device
+		for _, dev := range ds {
+			if dev.DeviceID == deviceID && dev.Token == token {
+				return nil
+			}
 
-		if len(ds) > 0 {
-			d = ds[0]
-			d.Disabled = false
-			d.Token = token
-		} else {
-			d = &device.Device{
-				DeviceID: deviceID,
-				Disabled: false,
-				Language: language,
-				Platform: platform,
-				Token:    token,
-				UserID:   origin.UserID,
+			if dev.DeviceID == deviceID || dev.Token == token {
+				d = dev
 			}
 		}
+
+		d.DeviceID = deviceID
+		d.Disabled = false
+		d.Language = language
+		d.Platform = platform
+		d.Token = token
+		d.UserID = origin.UserID
 
 		_, err = devices.Put(currentApp.Namespace(), d)
 		if err != nil {
