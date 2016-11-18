@@ -39,7 +39,7 @@ const (
 
 // Queue names.
 const (
-	queueEndpointChanges = "endpoint-changes"
+	queueEndpointChanges = "endpoint-change"
 )
 
 // Buildtime vars.
