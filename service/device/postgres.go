@@ -20,11 +20,12 @@ const (
 			%s.devices
 		SET
 			deleted = $2,
-			disabled = $3,
-			endpoint_arn = $4,
-			language = $5,
-			token = $6,
-			updated_at = $7
+			device_id = $3,
+			disabled = $4,
+			endpoint_arn = $5,
+			language = $6,
+			token = $7,
+			updated_at = $8
 		WHERE
 			id = $1`
 
@@ -153,6 +154,7 @@ func (s *pgService) Put(ns string, d *Device) (*Device, error) {
 		params = []interface{}{
 			d.ID,
 			d.Deleted,
+			d.DeviceID,
 			d.Disabled,
 			d.EndpointARN,
 			d.Language,
