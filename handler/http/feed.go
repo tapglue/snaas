@@ -58,6 +58,7 @@ func FeedEvents(fn core.FeedEventsFunc) Handler {
 				opts.Limit,
 				eventCursorAfter(feed.Events, opts.Limit),
 				eventCursorBefore(feed.Events, opts.Limit),
+				extractWhereParam(r)...,
 			),
 			postMap: feed.PostMap,
 			userMap: feed.UserMap,
@@ -125,7 +126,7 @@ func FeedNews(fn core.FeedNewsFunc) Handler {
 
 		respondJSON(w, http.StatusOK, &payloadFeedNews{
 			events:     feed.Events,
-			pagination: pagination(r, limit, after, before),
+			pagination: pagination(r, limit, after, before, extractWhereParam(r)...),
 			posts:      feed.Posts,
 			postMap:    feed.PostMap,
 			userMap:    feed.UserMap,
@@ -179,6 +180,7 @@ func FeedNotificationsSelf(fn core.FeedNotificationsSelfFunc) Handler {
 				opts.Limit,
 				eventCursorAfter(feed.Events, opts.Limit),
 				eventCursorBefore(feed.Events, opts.Limit),
+				extractWhereParam(r)...,
 			),
 			postMap: feed.PostMap,
 			userMap: feed.UserMap,
@@ -230,6 +232,7 @@ func FeedPosts(fn core.FeedPostsFunc) Handler {
 				opts.Limit,
 				postCursorAfter(feed.Posts, opts.Limit),
 				postCursorBefore(feed.Posts, opts.Limit),
+				extractWhereParam(r)...,
 			),
 			posts:   feed.Posts,
 			userMap: feed.UserMap,

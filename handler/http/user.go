@@ -179,7 +179,7 @@ func UserSearch(fn core.UserSearchFunc) Handler {
 		var (
 			currentApp  = appFromContext(ctx)
 			currentUser = userFromContext(ctx)
-			query       = r.URL.Query().Get("q")
+			query       = r.URL.Query().Get(keyUserQuery)
 		)
 
 		if len(query) < 3 {
@@ -222,6 +222,7 @@ func UserSearch(fn core.UserSearchFunc) Handler {
 				opts.Limit,
 				userCursorAfter(us, opts.Limit),
 				userCursorBefore(us, opts.Limit),
+				keyUserQuery, query,
 			),
 			users: us,
 		})
