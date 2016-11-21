@@ -101,19 +101,6 @@ func (s *pgService) Put(ns string, object *Object) (*Object, error) {
 		return nil, err
 	}
 
-	if object.ObjectID != 0 {
-		os, err := s.Query(ns, QueryOptions{
-			ID: &object.ObjectID,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		if len(os) != 1 {
-			return nil, ErrMissingReference
-		}
-	}
-
 	if object.ID != 0 {
 		params = []interface{}{
 			object.ID,
