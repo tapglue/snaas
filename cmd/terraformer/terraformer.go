@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -292,7 +293,7 @@ func generateVarFile(path string, accessKeyPub []byte, pgPassword string) error 
 		KeyAccess  string
 		PGPassword string
 	}{
-		KeyAccess:  string(accessKeyPub),
+		KeyAccess:  strings.Trim(string(accessKeyPub), "\n"),
 		PGPassword: pgPassword,
 	})
 
