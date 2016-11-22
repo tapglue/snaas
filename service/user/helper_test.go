@@ -239,6 +239,44 @@ func testServicePut(t *testing.T, p prepareFunc) {
 	}
 }
 
+func testServicePutEmailUnique(t *testing.T, p prepareFunc) {
+	var (
+		namespace = "service_put_email"
+		service   = p(t, namespace)
+		user      = testUser()
+		lowerCase = "xla@tgpl.dev"
+		mixedCase = "xlA@tgpl.dev"
+	)
+
+	user.Email = lowerCase
+
+	_, err := service.Put(namespace, user)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	us, err := service.Query(namespace, QueryOptions{
+		Emails: []string{
+			mixedCase,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if have, want := len(us), 1; have != want {
+		t.Errorf("have %v, want %v", have, want)
+	}
+
+	second := testUser()
+	second.Email = mixedCase
+
+	_, err = service.Put(namespace, second)
+	if have, want := err, ErrNotUnique; !IsNotUnique(err) {
+		t.Errorf("have %v, want %v\n%#v", have, want, err)
+	}
+}
+
 func testServicePutLastRead(t *testing.T, p prepareFunc) {
 	var (
 		namespace = "service_put_last_read"
@@ -276,6 +314,44 @@ func testServicePutLastRead(t *testing.T, p prepareFunc) {
 
 	if have, want := list[0], created; !reflect.DeepEqual(have, want) {
 		t.Errorf("\nhave %v,\nwant %v", have, want)
+	}
+}
+
+func testServicePutUsernameUnique(t *testing.T, p prepareFunc) {
+	var (
+		namespace = "service_put_email"
+		service   = p(t, namespace)
+		user      = testUser()
+		lowerCase = "xla1234"
+		mixedCase = "XlA1234"
+	)
+
+	user.Username = lowerCase
+
+	_, err := service.Put(namespace, user)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	us, err := service.Query(namespace, QueryOptions{
+		Usernames: []string{
+			mixedCase,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if have, want := len(us), 1; have != want {
+		t.Errorf("have %v, want %v", have, want)
+	}
+
+	second := testUser()
+	second.Username = mixedCase
+
+	_, err = service.Put(namespace, second)
+	if have, want := err, ErrNotUnique; !IsNotUnique(err) {
+		t.Errorf("have %v, want %v\n%#v", have, want, err)
 	}
 }
 
@@ -443,6 +519,7 @@ func testUser() *User {
 		),
 		Enabled:  true,
 		Password: generate.RandomString(8),
+		Username: generate.RandomString(8),
 	}
 }
 
