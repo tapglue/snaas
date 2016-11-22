@@ -281,6 +281,12 @@ func UserSearchEmails(fn core.UserListByEmailsFunc) Handler {
 		}
 
 		respondJSON(w, http.StatusOK, &payloadUsers{
+			pagination: pagination(
+				r,
+				opts.Limit,
+				userCursorAfter(us, opts.Limit),
+				userCursorBefore(us, opts.Limit),
+			),
 			users: us,
 		})
 	}
@@ -341,6 +347,12 @@ func UserSearchPlatform(fn core.UserListByPlatformIDsFunc) Handler {
 		}
 
 		respondJSON(w, http.StatusOK, &payloadUsers{
+			pagination: pagination(
+				r,
+				opts.Limit,
+				userCursorAfter(us, opts.Limit),
+				userCursorBefore(us, opts.Limit),
+			),
 			users: us,
 		})
 	}
