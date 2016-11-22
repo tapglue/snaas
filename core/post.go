@@ -221,6 +221,7 @@ type PostListAllFunc func(
 
 // PostListAll returns all objects which are of type post.
 func PostListAll(
+	connections connection.Service,
 	events event.Service,
 	objects object.Service,
 	users user.Service,
@@ -257,6 +258,13 @@ func PostListAll(
 		um, err := user.MapFromIDs(users, currentApp.Namespace(), ps.OwnerIDs()...)
 		if err != nil {
 			return nil, err
+		}
+
+		for _, u := range um {
+			err = enrichRelation(connections, currentApp, origin, u)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return &PostFeed{
@@ -336,6 +344,13 @@ func PostListUser(
 		um, err := user.MapFromIDs(users, currentApp.Namespace(), ps.OwnerIDs()...)
 		if err != nil {
 			return nil, err
+		}
+
+		for _, u := range um {
+			err = enrichRelation(connections, currentApp, origin, u)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return &PostFeed{

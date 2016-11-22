@@ -598,7 +598,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.PostListAll(
-				core.PostListAll(events, objects, users),
+				core.PostListAll(connections, events, objects, users),
 			),
 		),
 	)
