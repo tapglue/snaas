@@ -455,7 +455,7 @@ func FeedNews(
 	}
 }
 
-// FeedNotificationsSelf returns the events which target the origin user and
+// FeedNotificationsSelfFunc returns the events which target the origin user and
 // their content.
 type FeedNotificationsSelfFunc func(
 	currentApp *app.App,
@@ -513,6 +513,11 @@ func FeedNotificationsSelf(
 		}
 
 		um, err = fillupUsersForPosts(users, currentApp, origin, um, ps)
+		if err != nil {
+			return nil, err
+		}
+
+		err = enrichCounts(events, objects, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
