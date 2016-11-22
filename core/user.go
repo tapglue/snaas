@@ -34,14 +34,6 @@ func UserCreate(
 			return nil, err
 		}
 
-		if err := userConstrainEmail(users, currentApp, u.Email); err != nil {
-			return nil, err
-		}
-
-		if err := userConstrainUsername(users, currentApp, u.Username); err != nil {
-			return nil, err
-		}
-
 		if err := u.Validate(); err != nil {
 			return nil, wrapError(ErrInvalidEntity, "%s", err)
 		}
@@ -436,22 +428,8 @@ func UserUpdate(
 			new.Password = old.Password
 		}
 
-		if old.Email != new.Email {
-			err := userConstrainEmail(users, currentApp, new.Email)
-			if err != nil {
-				return nil, err
-			}
-		}
-
 		if new.Private == nil {
 			new.Private = old.Private
-		}
-
-		if old.Username != new.Username {
-			err := userConstrainUsername(users, currentApp, new.Username)
-			if err != nil {
-				return nil, err
-			}
 		}
 
 		u, err := users.Put(currentApp.Namespace(), new)
@@ -756,60 +734,12 @@ func passwordSecure(pw string) (string, error) {
 	return base64.StdEncoding.EncodeToString([]byte(enc)), nil
 }
 
-func userConstrainEmail(
-	users user.Service,
-	currentApp *app.App,
-	email string,
-) error {
-	if email != "" {
-		us, err := users.Query(currentApp.Namespace(), user.QueryOptions{
-			Enabled: &defaultEnabled,
-			Emails: []string{
-				email,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-		if len(us) > 0 {
-			return wrapError(ErrInvalidEntity, "email in use")
-		}
-	}
-
-	return nil
-}
-
 func userConstrainPrivate(origin Origin, private *user.Private) error {
 	if !origin.IsBackend() && private != nil {
 		return wrapError(
 			ErrUnauthorized,
 			"private can only be set by backend integration",
 		)
-	}
-
-	return nil
-}
-
-func userConstrainUsername(
-	users user.Service,
-	currentApp *app.App,
-	username string,
-) error {
-	if username != "" {
-		us, err := users.Query(currentApp.Namespace(), user.QueryOptions{
-			Enabled: &defaultEnabled,
-			Usernames: []string{
-				username,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-		if len(us) > 0 {
-			return wrapError(ErrInvalidEntity, "username in use")
-		}
 	}
 
 	return nil

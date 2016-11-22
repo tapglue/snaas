@@ -35,11 +35,11 @@ const (
 	pgClauseBefore    = `(json_data->>'id')::BIGINT > ?`
 	pgClauseCustomIDs = `(json_data->>'custom_id')::TEXT IN (?)`
 	pgClauseDeleted   = `(json_data->>'deleted')::BOOL = ?::BOOL`
-	pgClauseEmail     = `(json_data->>'email')::TEXT IN (?)`
+	pgClauseEmail     = `(json_data->>'email')::CITEXT IN (?)`
 	pgClauseEnabled   = `(json_data->>'enabled')::BOOL = ?::BOOL`
 	pgClauseIDs       = `(json_data->>'id')::BIGINT IN (?)`
 	pgClauseSocialIDs = `(json_data->'social_ids'->>'%s')::TEXT IN (?)`
-	pgClauseUsernames = `(json_data->>'user_name')::TEXT IN (?)`
+	pgClauseUsernames = `(json_data->>'user_name')::CITEXT IN (?)`
 
 	pgClauseSearchEmail     = `(json_data->>'email')::TEXT ILIKE '%%%s%%'`
 	pgClauseSearchFirstname = `(json_data->>'first_name')::TEXT ILIKE '%%%s%%'`
@@ -64,10 +64,10 @@ const (
 	pgDropTable = `DROP TABLE IF EXISTS %s.users`
 
 	pgIndexEmail = `
-		CREATE INDEX
+		CREATE UNIQUE INDEX
 			%s
 		ON
-			%s.users(((json_data->>'email')::TEXT))
+			%s.users(((json_data->>'email')::CITEXT))
 		WHERE
 			(json_data->>'enabled')::BOOL = true`
 	pgIndexID = `
@@ -92,10 +92,10 @@ const (
 		WHERE
 			(json_data->>'enabled')::BOOL = true`
 	pgIndexUsername = `
-		CREATE INDEX
+		CREATE UNIQUE INDEX
 			%s
 		ON
-			%s.users(((json_data->>'user_name')::TEXT))
+			%s.users(((json_data->>'user_name')::CITEXT))
 		WHERE
 			(json_data->>'enabled')::BOOL = true`
 )
@@ -181,6 +181,10 @@ func (s *pgService) Put(ns string, user *User) (*User, error) {
 			}
 
 			_, err = s.db.Exec(wrapNamespace(query, ns), params...)
+		}
+
+		if pg.IsNotUnique(pg.WrapError(err)) {
+			return nil, ErrNotUnique
 		}
 	}
 

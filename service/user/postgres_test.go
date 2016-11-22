@@ -22,8 +22,16 @@ func TestPostgresPut(t *testing.T) {
 	testServicePut(t, preparePostgres)
 }
 
+func TestPostgresPutEmailUnique(t *testing.T) {
+	testServicePutEmailUnique(t, preparePostgres)
+}
+
 func TestPostgresPutLastRead(t *testing.T) {
 	testServicePutLastRead(t, preparePostgres)
+}
+
+func TestPostgresPutUsernameUnique(t *testing.T) {
+	testServicePutUsernameUnique(t, preparePostgres)
 }
 
 func TestPostgresQuery(t *testing.T) {
