@@ -5,11 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tapglue/snaas/service/connection"
-
-	"github.com/tapglue/snaas/service/event"
-
 	"github.com/tapglue/snaas/service/app"
+	"github.com/tapglue/snaas/service/connection"
+	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
 	"github.com/tapglue/snaas/service/user"
 )
@@ -136,11 +134,12 @@ func TestPostDelete(t *testing.T) {
 
 func TestPostListAll(t *testing.T) {
 	var (
-		app, owner = testSetupPost()
-		events     = event.MemService()
-		objects    = object.MemService()
-		users      = user.MemService()
-		fn         = PostListAll(events, objects, users)
+		app, owner  = testSetupPost()
+		connections = connection.MemService()
+		events      = event.MemService()
+		objects     = object.MemService()
+		users       = user.MemService()
+		fn          = PostListAll(connections, events, objects, users)
 	)
 
 	feed, err := fn(app, owner.ID, object.QueryOptions{})
