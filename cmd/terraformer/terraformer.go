@@ -36,7 +36,7 @@ const (
 
 	binaryTerraform = "terraform"
 
-	bucketState = "snaas-state"
+	bucketState = "tapglue-snaas-state"
 
 	cmdSetup    = "setup"
 	cmdTeardown = "teardown"
