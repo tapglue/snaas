@@ -15,8 +15,10 @@ import (
 	"text/template"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/sts"
 	"golang.org/x/crypto/ssh"
 
@@ -24,12 +26,17 @@ import (
 )
 
 const (
-	argDestroy = "-destroy"
-	argOut     = "-out"
-	argState   = "-state"
-	argVarFile = "-var-file"
+	argBackend       = "-backend"
+	argBackendConfig = "-backend-config"
+	argConfig        = "config"
+	argDestroy       = "-destroy"
+	argOut           = "-out"
+	argState         = "-state"
+	argVarFile       = "-var-file"
 
 	binaryTerraform = "terraform"
+
+	bucketState = "snaas-state"
 
 	cmdSetup    = "setup"
 	cmdTeardown = "teardown"
@@ -40,15 +47,21 @@ const (
 	defaultTemplatePath = "infrastructure/terraform/template"
 	defaultTmpPath      = "/tmp"
 
+	fmtBucket    = "bucket=%s"
+	fmtKey       = "key=%s/%s.tfstate"
 	fmtNamespace = "%s-%s"
 	fmtPlan      = "%s/%s.plan"
+	fmtRegion    = "region=%s"
 	fmtStateFile = "%s.tfstate"
 	fmtVarsFile  = "%s.tfvars"
 	fmtTFVar     = "TF_VAR_%s=%s"
 
+	remoteBackendS3 = "s3"
+
 	tfCmdApply   = "apply"
 	tfCmdDestroy = "destroy"
 	tfCmdPlan    = "plan"
+	tfCmdRemote  = "remote"
 
 	tplTFVars = `
 key = {
@@ -67,6 +80,7 @@ func main() {
 		env          = flag.String("env", "", "Environment used for isolation.")
 		region       = flag.String("region", "", "AWS region to deploy to.")
 		statesPath   = flag.String("states.path", defaultStatesPath, "Location to store env states.")
+		stateRemote  = flag.Bool("state.remote", false, "Control if state is stored remotely in s3.")
 		templatePath = flag.String("template.path", defaultTemplatePath, "Location of the infrastructure template.")
 		tmpPath      = flag.String("tmp.path", defaultTmpPath, "Location for temporary output like plans.")
 		varsPath     = flag.String("vars.path", "", "Location of vars file.")
@@ -74,6 +88,19 @@ func main() {
 	flag.Parse()
 
 	log.SetFlags(log.Lshortfile)
+
+	awsSession, err := session.NewSession(&aws.Config{
+		Credentials: credentials.NewChainCredentials(
+			[]credentials.Provider{
+				&credentials.EnvProvider{},
+				&credentials.SharedCredentialsProvider{},
+			},
+		),
+		Region: aws.String(*region),
+	})
+	if err != nil {
+		log.Fatalf("%#v\n", err)
+	}
 
 	if len(flag.Args()) != 1 {
 		log.Fatal("provide command: setup, teardown, update")
@@ -91,16 +118,22 @@ func main() {
 		log.Fatal("terraform must be in your PATH")
 	}
 
-	account, err := awsAcoount(*region)
+	account, err := awsAcoount(awsSession)
 	if err != nil {
 		log.Fatalf("AWS account fetch failed: %s", err)
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("getting current directory failed: %s", err)
 	}
 
 	var (
 		namespace = fmt.Sprintf(fmtNamespace, *env, *region)
 		planFile  = fmt.Sprintf(fmtPlan, *tmpPath, namespace)
-		statePath = filepath.Join(*statesPath, namespace)
+		statePath = filepath.Join(cwd, *statesPath, namespace)
 		stateFile = filepath.Join(statePath, fmt.Sprintf(fmtStateFile, namespace))
+		tmplPath  = filepath.Join(cwd, *templatePath)
 		varFile   = filepath.Join(statePath, fmt.Sprintf(fmtVarsFile, namespace))
 		environ   = append(
 			os.Environ(),
@@ -114,95 +147,15 @@ func main() {
 		varFile = *varsPath
 	}
 
-	switch flag.Args()[0] {
-	case cmdSetup:
-		if _, err := os.Stat(stateFile); err == nil {
-			log.Fatalf("state file already exists: %s", stateFile)
-		}
-
-		if err := os.MkdirAll(statePath, os.ModePerm); err != nil {
-			log.Fatalf("state dir creation failed: %s", err)
-		}
-
-		if _, err := os.Stat(varFile); err != nil {
-			if !os.IsNotExist(err) {
-				log.Fatal(err)
-			}
-
-			pubKey, err := generateKeyPair(filepath.Join(statePath, defaultKeyPath))
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if err = generateVarFile(varFile, pubKey, generate.RandomString(32)); err != nil {
-				log.Fatalf("var file create failed: %s", err)
-			}
-		}
-
+	update := func() {
 		args := []string{
 			argOut, planFile,
 			argState, stateFile,
 			argVarFile, varFile,
-			*templatePath,
+			tmplPath,
 		}
 
-		if err := prepareCmd(environ, tfCmdPlan, args...).Run(); err != nil {
-			os.Exit(1)
-		}
-
-		fmt.Println("Want to apply the plan? (type 'yes')")
-		fmt.Print("(no) |> ")
-
-		response := "no"
-		fmt.Scanf("%s", &response)
-
-		if response != "yes" {
-			os.Exit(1)
-		}
-
-		args = []string{
-			argState, stateFile,
-			planFile,
-		}
-
-		if err := prepareCmd(environ, tfCmdApply, args...).Run(); err != nil {
-			os.Exit(1)
-		}
-	case cmdTeardown:
-		args := []string{
-			argDestroy,
-			argOut, planFile,
-			argState, stateFile,
-			argVarFile, varFile,
-			*templatePath,
-		}
-
-		if err := prepareCmd(environ, tfCmdPlan, args...).Run(); err != nil {
-			os.Exit(1)
-		}
-
-		args = []string{
-			argState, stateFile,
-			argVarFile, varFile,
-			*templatePath,
-		}
-
-		if err := prepareCmd(environ, tfCmdDestroy, args...).Run(); err != nil {
-			os.Exit(1)
-		}
-	case cmdUpdate:
-		if _, err := os.Stat(stateFile); err != nil {
-			log.Fatalf("couldn't locate state file: %s", err)
-		}
-
-		args := []string{
-			argOut, planFile,
-			argState, stateFile,
-			argVarFile, varFile,
-			*templatePath,
-		}
-
-		if err := prepareCmd(environ, tfCmdPlan, args...).Run(); err != nil {
+		if err := prepareCmd(statePath, environ, tfCmdPlan, args...).Run(); err != nil {
 			os.Exit(1)
 		}
 
@@ -221,26 +174,113 @@ func main() {
 			planFile,
 		}
 
-		if err := prepareCmd(environ, tfCmdApply, args...).Run(); err != nil {
+		if err := prepareCmd(statePath, environ, tfCmdApply, args...).Run(); err != nil {
 			os.Exit(1)
 		}
+	}
+
+	switch flag.Args()[0] {
+	case cmdSetup:
+		if _, err := os.Stat(stateFile); err == nil {
+			log.Fatalf("state file already exists: %s", stateFile)
+		}
+
+		if err := os.MkdirAll(statePath, os.ModePerm); err != nil {
+			log.Fatalf("state dir creation failed: %s", err)
+		}
+
+		pubKey, err := generateKeyPair(filepath.Join(statePath, defaultKeyPath))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if err = generateVarFile(varFile, pubKey, generate.RandomString(32)); err != nil {
+			log.Fatalf("var file create failed: %s", err)
+		}
+
+		if *stateRemote {
+			svcS3 := s3.New(awsSession, aws.NewConfig().WithRegion(*region))
+
+			_, err = svcS3.HeadBucket(&s3.HeadBucketInput{
+				Bucket: aws.String(bucketState),
+			})
+			if err != nil {
+				if awsErr, ok := err.(awserr.RequestFailure); ok &&
+					awsErr.StatusCode() == 404 {
+					_, err := svcS3.CreateBucket(&s3.CreateBucketInput{
+						Bucket: aws.String(bucketState),
+					})
+					if err != nil {
+						log.Fatalf("bucket create failed: %s", err)
+					}
+
+					_, err = svcS3.PutBucketVersioning(&s3.PutBucketVersioningInput{
+						Bucket: aws.String(bucketState),
+						VersioningConfiguration: &s3.VersioningConfiguration{
+							Status: aws.String("Enabled"),
+						},
+					})
+					if err != nil {
+						if awsErr, ok := err.(awserr.RequestFailure); ok {
+							log.Fatalf("bucket versioning failed: %s", awsErr.Error())
+						}
+						log.Fatalf("bucket versioning failed: %s", err)
+					}
+				} else {
+					log.Fatalf("bucket check failed: %s", err)
+				}
+			}
+
+			args := []string{
+				argConfig,
+				argBackend, remoteBackendS3,
+				argBackendConfig, fmt.Sprintf(fmtRegion, *region),
+				argBackendConfig, fmt.Sprintf(fmtBucket, bucketState),
+				argBackendConfig, fmt.Sprintf(fmtKey, *region, *region),
+				argState, stateFile,
+			}
+
+			if err := prepareCmd(statePath, environ, tfCmdRemote, args...).Run(); err != nil {
+				os.Exit(1)
+			}
+		}
+
+		update()
+	case cmdTeardown:
+		args := []string{
+			argDestroy,
+			argOut, planFile,
+			argState, stateFile,
+			argVarFile, varFile,
+			tmplPath,
+		}
+
+		if err := prepareCmd(statePath, environ, tfCmdPlan, args...).Run(); err != nil {
+			os.Exit(1)
+		}
+
+		args = []string{
+			argState, stateFile,
+			argVarFile, varFile,
+			tmplPath,
+		}
+
+		if err := prepareCmd(statePath, environ, tfCmdDestroy, args...).Run(); err != nil {
+			os.Exit(1)
+		}
+	case cmdUpdate:
+		if _, err := os.Stat(stateFile); err != nil {
+			log.Fatalf("couldn't locate state file: %s", err)
+		}
+
+		update()
 	default:
 		log.Fatalf("unknown command '%s'", flag.Args()[0])
 	}
 }
 
-func awsAcoount(region string) (string, error) {
-	var (
-		providers = []credentials.Provider{
-			&credentials.EnvProvider{},
-			&credentials.SharedCredentialsProvider{},
-		}
-		awsSession = session.New(&aws.Config{
-			Credentials: credentials.NewChainCredentials(providers),
-			Region:      aws.String(region),
-		})
-		stsService = sts.New(awsSession)
-	)
+func awsAcoount(sess *session.Session) (string, error) {
+	stsService := sts.New(sess)
 
 	res, err := stsService.GetCallerIdentity(&sts.GetCallerIdentityInput{})
 	if err != nil {
@@ -300,10 +340,11 @@ func generateVarFile(path string, accessKeyPub []byte, pgPassword string) error 
 	return nil
 }
 
-func prepareCmd(environ []string, command string, args ...string) *exec.Cmd {
+func prepareCmd(dir string, environ []string, command string, args ...string) *exec.Cmd {
 	args = append([]string{command}, args...)
 
 	cmd := exec.Command(binaryTerraform, args...)
+	cmd.Dir = dir
 	cmd.Env = append(
 		environ,
 		"TF_LOG=TRACE",
