@@ -21,6 +21,7 @@ type ConnectionByStateFunc func(
 	currentApp *app.App,
 	originID uint64,
 	state connection.State,
+	opts connection.QueryOptions,
 ) (*ConnectionFeed, error)
 
 // ConnectionByState returns all connections for the given origin and state.
@@ -32,6 +33,7 @@ func ConnectionByState(
 		currentApp *app.App,
 		originID uint64,
 		state connection.State,
+		opts connection.QueryOptions,
 	) (*ConnectionFeed, error) {
 		switch state {
 		case connection.StatePending, connection.StateConfirmed, connection.StateRejected:
@@ -41,8 +43,10 @@ func ConnectionByState(
 		}
 
 		ics, err := connections.Query(currentApp.Namespace(), connection.QueryOptions{
+			Before:  opts.Before,
 			Enabled: &defaultEnabled,
 			FromIDs: []uint64{originID},
+			Limit:   opts.Limit,
 			States:  []connection.State{state},
 		})
 		if err != nil {
@@ -50,7 +54,9 @@ func ConnectionByState(
 		}
 
 		ocs, err := connections.Query(currentApp.Namespace(), connection.QueryOptions{
+			Before:  opts.Before,
 			Enabled: &defaultEnabled,
+			Limit:   opts.Limit,
 			States:  []connection.State{state},
 			ToIDs:   []uint64{originID},
 		})
@@ -58,17 +64,40 @@ func ConnectionByState(
 			return nil, err
 		}
 
+		cons := append(ics, ocs...)
+
+		if len(cons) == 0 {
+			return &ConnectionFeed{
+				Connections: connection.List{},
+				UserMap:     user.Map{},
+			}, nil
+		}
+
+		if len(cons) > opts.Limit {
+			cons = cons[:opts.Limit-1]
+		}
+
+		ids := []uint64{}
+
+		for _, c := range cons {
+			if c.FromID == originID {
+				ids = append(ids, c.ToID)
+			} else {
+				ids = append(ids, c.FromID)
+			}
+		}
+
 		um, err := user.MapFromIDs(
 			users,
 			currentApp.Namespace(),
-			append(ics.ToIDs(), ocs.FromIDs()...)...,
+			ids...,
 		)
 		if err != nil {
 			return nil, err
 		}
 
 		return &ConnectionFeed{
-			Connections: append(ics, ocs...),
+			Connections: cons,
 			UserMap:     um,
 		}, nil
 	}
@@ -185,6 +214,7 @@ type ConnectionFollowerIDsFunc func(
 	origin uint64,
 ) ([]uint64, error)
 
+// ConnectionFollowerIDs returns the list of ids of users who follow origin.
 func ConnectionFollowerIDs(
 	connections connection.Service,
 ) ConnectionFollowerIDsFunc {
@@ -326,6 +356,8 @@ type ConnectionFriendIDsFunc func(
 	origin uint64,
 ) ([]uint64, error)
 
+// ConnectionFriendIDs returns the list of ids of users who are friends with
+// origin.
 func ConnectionFriendIDs(connections connection.Service) ConnectionFriendIDsFunc {
 	return func(currentApp *app.App, origin uint64) ([]uint64, error) {
 		fs, err := connections.Query(currentApp.Namespace(), connection.QueryOptions{
