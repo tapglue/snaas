@@ -24,7 +24,25 @@ func ConnectionByState(fn core.ConnectionByStateFunc) Handler {
 			state       = extractState(r)
 		)
 
-		feed, err := fn(app, currentUser.ID, state)
+		opts, err := extractConnectionOpts(r)
+		if err != nil {
+			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
+			return
+		}
+
+		opts.Before, err = extractTimeCursorBefore(r)
+		if err != nil {
+			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
+			return
+		}
+
+		opts.Limit, err = extractLimit(r)
+		if err != nil {
+			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
+			return
+		}
+
+		feed, err := fn(app, currentUser.ID, state, opts)
 		if err != nil {
 			respondError(w, 0, err)
 			return
@@ -36,6 +54,12 @@ func ConnectionByState(fn core.ConnectionByStateFunc) Handler {
 		}
 
 		respondJSON(w, http.StatusOK, &payloadConnections{
+			pagination: pagination(
+				r,
+				opts.Limit,
+				connectionCursorAfter(feed.Connections, opts.Limit),
+				connectionCursorBefore(feed.Connections, opts.Limit),
+			),
 			cons:    feed.Connections,
 			origin:  currentUser.ID,
 			userMap: feed.UserMap,
@@ -571,9 +595,10 @@ func (p *payloadConnection) UnmarshalJSON(raw []byte) error {
 }
 
 type payloadConnections struct {
-	cons    connection.List
-	origin  uint64
-	userMap user.Map
+	cons       connection.List
+	origin     uint64
+	pagination *payloadPagination
+	userMap    user.Map
 }
 
 func (p *payloadConnections) MarshalJSON() ([]byte, error) {
@@ -582,11 +607,13 @@ func (p *payloadConnections) MarshalJSON() ([]byte, error) {
 		IncomingCount int                  `json:"incoming_connections_count"`
 		Outgoing      []*payloadConnection `json:"outgoing"`
 		OutgoingCount int                  `json:"outgoing_connections_count"`
+		Pagination    *payloadPagination   `json:"paging"`
 		Users         []*payloadUser       `json:"users"`
 		UsersCount    int                  `json:"users_count"`
 	}{
 		Incoming:   []*payloadConnection{},
 		Outgoing:   []*payloadConnection{},
+		Pagination: p.pagination,
 		Users:      []*payloadUser{},
 		UsersCount: len(p.userMap),
 	}
