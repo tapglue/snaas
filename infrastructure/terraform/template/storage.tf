@@ -1,7 +1,8 @@
 resource "aws_db_subnet_group" "service" {
   description = "Service Postgres"
-  name = "service-${var.env}-${var.region}"
-  subnet_ids  = [
+  name        = "service-${var.env}-${var.region}"
+
+  subnet_ids = [
     "${aws_subnet.platform-a.id}",
     "${aws_subnet.platform-b.id}",
   ]
@@ -13,45 +14,45 @@ resource "aws_db_parameter_group" "service-master" {
   name        = "service-master"
 
   parameter {
-    apply_method  = "pending-reboot"
-    name          = "log_statement"
-    value         = "all"
+    apply_method = "pending-reboot"
+    name         = "log_statement"
+    value        = "all"
   }
 
   parameter {
-    apply_method  = "pending-reboot"
-    name          = "log_min_duration_statement"
-    value         = "20"
+    apply_method = "pending-reboot"
+    name         = "log_min_duration_statement"
+    value        = "20"
   }
 
   parameter {
-    apply_method  = "pending-reboot"
-    name          = "log_duration"
-    value         = "1"
+    apply_method = "pending-reboot"
+    name         = "log_duration"
+    value        = "1"
   }
 
   parameter {
-    apply_method  = "pending-reboot"
-    name          = "shared_preload_libraries"
-    value         = "pg_stat_statements"
+    apply_method = "pending-reboot"
+    name         = "shared_preload_libraries"
+    value        = "pg_stat_statements"
   }
 
   parameter {
-    apply_method  = "pending-reboot"
-    name          = "track_activity_query_size"
-    value         = "2048"
+    apply_method = "pending-reboot"
+    name         = "track_activity_query_size"
+    value        = "2048"
   }
 
   parameter {
-    apply_method  = "pending-reboot"
-    name          = "pg_stat_statements.track"
-    value         = "ALL"
+    apply_method = "pending-reboot"
+    name         = "pg_stat_statements.track"
+    value        = "ALL"
   }
 
   parameter {
-    apply_method  = "pending-reboot"
-    name          = "autovacuum"
-    value         = "1"
+    apply_method = "pending-reboot"
+    name         = "autovacuum"
+    value        = "1"
   }
 
   parameter {
@@ -61,9 +62,9 @@ resource "aws_db_parameter_group" "service-master" {
   }
 
   parameter {
-    apply_method  = "immediate"
-    name          = "autovacuum_vacuum_scale_factor"
-    value         = "0.2"
+    apply_method = "immediate"
+    name         = "autovacuum_vacuum_scale_factor"
+    value        = "0.2"
   }
 
   parameter {
@@ -73,9 +74,9 @@ resource "aws_db_parameter_group" "service-master" {
   }
 
   parameter {
-    apply_method  = "pending-reboot"
-    name          = "log_autovacuum_min_duration"
-    value         = "1"
+    apply_method = "pending-reboot"
+    name         = "log_autovacuum_min_duration"
+    value        = "1"
   }
 
   parameter {
@@ -131,39 +132,43 @@ resource "aws_db_instance" "service-master" {
     "${aws_security_group.platform.id}",
   ]
 
-  name                    = "${var.pg_db_name}"
-  username                = "${var.pg_username}"
-  password                = "${var.pg_password}"
+  name     = "${var.pg_db_name}"
+  username = "${var.pg_username}"
+  password = "${var.pg_password}"
 }
 
 resource "aws_elasticache_subnet_group" "ratelimiter" {
   description = "ratelimiter cache"
   name        = "ratelimiter"
-  subnet_ids  = [
+
+  subnet_ids = [
     "${aws_subnet.platform-a.id}",
     "${aws_subnet.platform-b.id}",
   ]
 }
 
 resource "aws_elasticache_cluster" "ratelimiter" {
-  cluster_id            = "ratelimiter"
-  engine                = "redis"
-  engine_version        = "2.8.21"
-  maintenance_window    = "sun:05:00-sun:06:00"
-  node_type             = "cache.t2.micro"
-  num_cache_nodes       = 1
-  parameter_group_name  = "default.redis2.8"
-  port                  = 6379
-  security_group_ids    = [
+  cluster_id           = "ratelimiter"
+  engine               = "redis"
+  engine_version       = "2.8.21"
+  maintenance_window   = "sun:05:00-sun:06:00"
+  node_type            = "cache.t2.micro"
+  num_cache_nodes      = 1
+  parameter_group_name = "default.redis2.8"
+  port                 = 6379
+
+  security_group_ids = [
     "${aws_security_group.platform.id}",
   ]
-  subnet_group_name     = "${aws_elasticache_subnet_group.ratelimiter.name}"
+
+  subnet_group_name = "${aws_elasticache_subnet_group.ratelimiter.name}"
 }
 
 resource "aws_s3_bucket" "logs-elb" {
-  bucket        = "${var.region}-${var.env}-logs-elb"
+  bucket        = "tapglue-snaas-${var.region}-${var.env}-logs-elb"
   force_destroy = true
-  policy        = <<EOF
+
+  policy = <<EOF
 {
 	"Version": "2012-10-17",
 	"Id": "Policy1458936351610",
@@ -175,7 +180,7 @@ resource "aws_s3_bucket" "logs-elb" {
 				"AWS": "arn:aws:iam::${var.elb_id["${var.region}"]}:root"
 			},
 			"Action": "s3:PutObject",
-			"Resource": "arn:aws:s3:::${var.region}-${var.env}-logs-elb/AWSLogs/${var.account}/*"
+			"Resource": "arn:aws:s3:::tapglue-snaas-${var.region}-${var.env}-logs-elb/AWSLogs/${var.account}/*"
 		}
 	]
 }
@@ -183,97 +188,105 @@ EOF
 }
 
 resource "aws_sqs_queue" "connection-state-change-dlq" {
-    delay_seconds               = 0
-    max_message_size            = 262144
-    message_retention_seconds   = 1209600
-    name                        = "connection-state-change-dlq"
-    receive_wait_time_seconds   = 1
-    visibility_timeout_seconds  = 300
+  delay_seconds              = 0
+  max_message_size           = 262144
+  message_retention_seconds  = 1209600
+  name                       = "connection-state-change-dlq"
+  receive_wait_time_seconds  = 1
+  visibility_timeout_seconds = 300
 }
 
 resource "aws_sqs_queue" "connection-state-change" {
-    delay_seconds               = 0
-    max_message_size            = 262144
-    message_retention_seconds   = 1209600
-    name                        = "connection-state-change"
-    receive_wait_time_seconds   = 1
-    redrive_policy              = <<EOF
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 1209600
+  name                      = "connection-state-change"
+  receive_wait_time_seconds = 1
+
+  redrive_policy = <<EOF
 {
     "deadLetterTargetArn": "${aws_sqs_queue.connection-state-change-dlq.arn}",
     "maxReceiveCount": 10
 }
 EOF
-    visibility_timeout_seconds  = 60
+
+  visibility_timeout_seconds = 60
 }
 
 resource "aws_sqs_queue" "endpoint-state-change-dlq" {
-    delay_seconds               = 0
-    max_message_size            = 262144
-    message_retention_seconds   = 1209600
-    name                        = "endpoint-state-change-dlq"
-    receive_wait_time_seconds   = 1
-    visibility_timeout_seconds  = 300
+  delay_seconds              = 0
+  max_message_size           = 262144
+  message_retention_seconds  = 1209600
+  name                       = "endpoint-state-change-dlq"
+  receive_wait_time_seconds  = 1
+  visibility_timeout_seconds = 300
 }
 
 resource "aws_sqs_queue" "endpoint-state-change" {
-    delay_seconds               = 0
-    max_message_size            = 262144
-    message_retention_seconds   = 1209600
-    name                        = "endpoint-state-change"
-    receive_wait_time_seconds   = 1
-    redrive_policy              = <<EOF
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 1209600
+  name                      = "endpoint-state-change"
+  receive_wait_time_seconds = 1
+
+  redrive_policy = <<EOF
 {
     "deadLetterTargetArn": "${aws_sqs_queue.endpoint-state-change-dlq.arn}",
     "maxReceiveCount": 10
 }
 EOF
-    visibility_timeout_seconds  = 60
+
+  visibility_timeout_seconds = 60
 }
 
 resource "aws_sqs_queue" "event-state-change-dlq" {
-    delay_seconds               = 0
-    max_message_size            = 262144
-    message_retention_seconds   = 1209600
-    name                        = "event-state-change-dlq"
-    receive_wait_time_seconds   = 1
-    visibility_timeout_seconds  = 300
+  delay_seconds              = 0
+  max_message_size           = 262144
+  message_retention_seconds  = 1209600
+  name                       = "event-state-change-dlq"
+  receive_wait_time_seconds  = 1
+  visibility_timeout_seconds = 300
 }
 
 resource "aws_sqs_queue" "event-state-change" {
-    delay_seconds               = 0
-    max_message_size            = 262144
-    message_retention_seconds   = 1209600
-    name                        = "event-state-change"
-    receive_wait_time_seconds   = 1
-    redrive_policy              = <<EOF
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 1209600
+  name                      = "event-state-change"
+  receive_wait_time_seconds = 1
+
+  redrive_policy = <<EOF
 {
     "deadLetterTargetArn": "${aws_sqs_queue.event-state-change-dlq.arn}",
     "maxReceiveCount": 10
 }
 EOF
-    visibility_timeout_seconds  = 60
+
+  visibility_timeout_seconds = 60
 }
 
 resource "aws_sqs_queue" "object-state-change-dlq" {
-    delay_seconds               = 0
-    max_message_size            = 262144
-    message_retention_seconds   = 1209600
-    name                        = "object-state-change-dlq"
-    receive_wait_time_seconds   = 1
-    visibility_timeout_seconds  = 300
+  delay_seconds              = 0
+  max_message_size           = 262144
+  message_retention_seconds  = 1209600
+  name                       = "object-state-change-dlq"
+  receive_wait_time_seconds  = 1
+  visibility_timeout_seconds = 300
 }
 
 resource "aws_sqs_queue" "object-state-change" {
-    delay_seconds               = 0
-    max_message_size            = 262144
-    message_retention_seconds   = 1209600
-    name                        = "object-state-change"
-    receive_wait_time_seconds   = 1
-    redrive_policy              = <<EOF
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 1209600
+  name                      = "object-state-change"
+  receive_wait_time_seconds = 1
+
+  redrive_policy = <<EOF
 {
     "deadLetterTargetArn": "${aws_sqs_queue.object-state-change-dlq.arn}",
     "maxReceiveCount": 10
 }
 EOF
-    visibility_timeout_seconds  = 60
+
+  visibility_timeout_seconds = 60
 }
