@@ -269,7 +269,7 @@ func main() {
 			os.Exit(1)
 		}
 	case cmdUpdate:
-		if _, err := os.Stat(stateFile); err != nil {
+		if _, err := os.Stat(stateFile); !*stateRemote && err != nil {
 			log.Fatalf("couldn't locate state file: %s", err)
 		}
 
