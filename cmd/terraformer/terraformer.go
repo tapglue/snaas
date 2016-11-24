@@ -199,25 +199,25 @@ func main() {
 
 		if *stateRemote {
 			var (
-				bucket = fmt.Sprint(fmtBucketState, account)
+				bucket = fmt.Sprintf(fmtBucketState, account)
 				svcS3  = s3.New(awsSession, aws.NewConfig().WithRegion(*region))
 			)
 
 			_, err = svcS3.HeadBucket(&s3.HeadBucketInput{
-				Bucket: aws.String(bucketState),
+				Bucket: aws.String(bucket),
 			})
 			if err != nil {
 				if awsErr, ok := err.(awserr.RequestFailure); ok &&
 					awsErr.StatusCode() == 404 {
 					_, err := svcS3.CreateBucket(&s3.CreateBucketInput{
-						Bucket: aws.String(bucketState),
+						Bucket: aws.String(bucket),
 					})
 					if err != nil {
 						log.Fatalf("bucket create failed: %s", err)
 					}
 
 					_, err = svcS3.PutBucketVersioning(&s3.PutBucketVersioningInput{
-						Bucket: aws.String(bucketState),
+						Bucket: aws.String(bucket),
 						VersioningConfiguration: &s3.VersioningConfiguration{
 							Status: aws.String("Enabled"),
 						},
@@ -237,7 +237,7 @@ func main() {
 				argConfig,
 				argBackend, remoteBackendS3,
 				argBackendConfig, fmt.Sprintf(fmtRegion, *region),
-				argBackendConfig, fmt.Sprintf(fmtBucket, bucketState),
+				argBackendConfig, fmt.Sprintf(fmtBucket, bucket),
 				argBackendConfig, fmt.Sprintf(fmtKey, *region, *region),
 				argState, stateFile,
 			}
