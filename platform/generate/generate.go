@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!#$%^&*()_+{}:\"|<>?`-=[];'\\,./"
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!$%^&*()_+{}:\"|<>?`-=[];'\\,./"
 const (
 	letterIdxBits = 6                    // 6 bits to represent a letter index
 	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
