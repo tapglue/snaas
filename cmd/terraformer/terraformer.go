@@ -36,8 +36,6 @@ const (
 
 	binaryTerraform = "terraform"
 
-	bucketState = "tapglue-snaas-state"
-
 	cmdSetup    = "setup"
 	cmdTeardown = "teardown"
 	cmdUpdate   = "update"
@@ -47,14 +45,15 @@ const (
 	defaultTemplatePath = "infrastructure/terraform/template"
 	defaultTmpPath      = "/tmp"
 
-	fmtBucket    = "bucket=%s"
-	fmtKey       = "key=%s/%s.tfstate"
-	fmtNamespace = "%s-%s"
-	fmtPlan      = "%s/%s.plan"
-	fmtRegion    = "region=%s"
-	fmtStateFile = "%s.tfstate"
-	fmtVarsFile  = "%s.tfvars"
-	fmtTFVar     = "TF_VAR_%s=%s"
+	fmtBucket      = "bucket=%s"
+	fmtBucketState = "%s-tapglue-snaas-state"
+	fmtKey         = "key=%s/%s.tfstate"
+	fmtNamespace   = "%s-%s"
+	fmtPlan        = "%s/%s.plan"
+	fmtRegion      = "region=%s"
+	fmtStateFile   = "%s.tfstate"
+	fmtVarsFile    = "%s.tfvars"
+	fmtTFVar       = "TF_VAR_%s=%s"
 
 	remoteBackendS3 = "s3"
 
@@ -199,7 +198,10 @@ func main() {
 		}
 
 		if *stateRemote {
-			svcS3 := s3.New(awsSession, aws.NewConfig().WithRegion(*region))
+			var (
+				bucket = fmt.Sprint(fmtBucketState, account)
+				svcS3  = s3.New(awsSession, aws.NewConfig().WithRegion(*region))
+			)
 
 			_, err = svcS3.HeadBucket(&s3.HeadBucketInput{
 				Bucket: aws.String(bucketState),
