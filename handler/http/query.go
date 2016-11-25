@@ -21,6 +21,8 @@ import (
 const (
 	cursorTimeFormat = time.RFC3339Nano
 
+	headerForwardedProto = "X-Forwarded-Proto"
+
 	keyCommentID    = "commentID"
 	keyCursorAfter  = "after"
 	keyCursorBefore = "before"
@@ -74,7 +76,7 @@ func (p *payloadPagination) MarshalJSON() ([]byte, error) {
 		scheme   = "http"
 	)
 
-	if p.req.TLS != nil {
+	if p.req.TLS != nil || p.req.Header.Get(headerForwardedProto) == "https" {
 		scheme = "https"
 	}
 
