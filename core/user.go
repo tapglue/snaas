@@ -48,6 +48,10 @@ func UserCreate(
 
 		u, err = users.Put(currentApp.Namespace(), u)
 		if err != nil {
+			if user.IsNotUnique(err) {
+				return nil, ErrInvalidEntity
+			}
+
 			return nil, err
 		}
 
