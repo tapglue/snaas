@@ -46,7 +46,7 @@ const (
 	defaultTmpPath      = "/tmp"
 
 	fmtBucket      = "bucket=%s"
-	fmtBucketState = "%s-tapglue-snaas-state"
+	fmtBucketState = "%s-snaas-state"
 	fmtKey         = "key=%s/%s.tfstate"
 	fmtNamespace   = "%s-%s"
 	fmtPlan        = "%s/%s.plan"
@@ -63,6 +63,7 @@ const (
 	tfCmdRemote  = "remote"
 
 	tplTFVars = `
+domain = "{{.Domain}}"
 key = {
 	access = "{{.KeyAccess}}"
 }
@@ -73,6 +74,13 @@ pg_password = "{{.PGPassword}}"
 	varEnv     = "env"
 	varRegion  = "region"
 )
+
+// vars bundles together all generated or given input that is custom to the env.
+type vars struct {
+	KeyAccess  string
+	Domain     string
+	PGPassword string
+}
 
 func main() {
 	var (
@@ -188,12 +196,25 @@ func main() {
 			log.Fatalf("state dir creation failed: %s", err)
 		}
 
+		fmt.Println("\nWhat is the domain the env should be reachable at?")
+		fmt.Print("|> ")
+		domain := ""
+		fmt.Scanf("%s", &domain)
+
+		if domain == "" {
+			log.Fatal("Can't work without a domain.")
+		}
+
 		pubKey, err := generateKeyPair(filepath.Join(statePath, defaultKeyPath))
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if err = generateVarFile(varFile, pubKey, generate.RandomString(32)); err != nil {
+		if err = generateVarFile(varFile, vars{
+			Domain:     domain,
+			KeyAccess:  strings.Trim(string(pubKey), "\n"),
+			PGPassword: generate.RandomStringSafe(32),
+		}); err != nil {
 			log.Fatalf("var file create failed: %s", err)
 		}
 
@@ -298,7 +319,7 @@ func generateKeyPair(privateKeyPath string) ([]byte, error) {
 		return nil, err
 	}
 
-	privateFile, err := os.Create(privateKeyPath)
+	privateFile, err := os.OpenFile(privateKeyPath, os.O_CREATE|os.O_WRONLY, 0400)
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +341,7 @@ func generateKeyPair(privateKeyPath string) ([]byte, error) {
 	return ssh.MarshalAuthorizedKey(pub), nil
 }
 
-func generateVarFile(path string, accessKeyPub []byte, pgPassword string) error {
+func generateVarFile(path string, vs vars) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return err
@@ -331,15 +352,7 @@ func generateVarFile(path string, accessKeyPub []byte, pgPassword string) error 
 		return err
 	}
 
-	tmpl.Execute(f, struct {
-		KeyAccess  string
-		PGPassword string
-	}{
-		KeyAccess:  strings.Trim(string(accessKeyPub), "\n"),
-		PGPassword: pgPassword,
-	})
-
-	return nil
+	return tmpl.Execute(f, vs)
 }
 
 func prepareCmd(dir string, environ []string, command string, args ...string) *exec.Cmd {
