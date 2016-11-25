@@ -10,6 +10,7 @@ import (
 	"golang.org/x/crypto/scrypt"
 )
 
+const letterSafeBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~"
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ~!$%^&*()_+{}:\"|<>?`-=[];'\\,./"
 const (
 	letterIdxBits = 6                    // 6 bits to represent a letter index
@@ -67,14 +68,29 @@ func Salt() ([]byte, error) {
 //
 // Solution based on SO thread: http://stackoverflow.com/a/31832326/1590256
 func RandomBytes(src rand.Source, n int) []byte {
+	return randomBytes(src, letterBytes, n)
+}
+
+// RandomString returns a genrated string with the provided length.
+func RandomString(n int) string {
+	return string(RandomBytes(rand.NewSource(time.Now().UnixNano()), n))
+}
+
+// RandomStringSafe returns a generated string which is safe to use in basic
+// auth passwords.
+func RandomStringSafe(n int) string {
+	return string(randomBytes(rand.NewSource(time.Now().UnixNano()), letterSafeBytes, n))
+}
+
+func randomBytes(src rand.Source, bytes string, n int) []byte {
 	b := make([]byte, n)
 
 	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
 		if remain == 0 {
 			cache, remain = src.Int63(), letterIdxMax
 		}
-		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
-			b[i] = letterBytes[idx]
+		if idx := int(cache & letterIdxMask); idx < len(bytes) {
+			b[i] = bytes[idx]
 			i--
 		}
 		cache >>= letterIdxBits
@@ -82,9 +98,4 @@ func RandomBytes(src rand.Source, n int) []byte {
 	}
 
 	return b
-}
-
-// RandomString returns a genrated string with the provided length.
-func RandomString(n int) string {
-	return string(RandomBytes(rand.NewSource(time.Now().UnixNano()), n))
 }
