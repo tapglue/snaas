@@ -165,7 +165,7 @@ resource "aws_elasticache_cluster" "ratelimiter" {
 }
 
 resource "aws_s3_bucket" "logs-elb" {
-  bucket        = "tapglue-snaas-${var.region}-${var.env}-logs-elb"
+  bucket        = "${var.account}-snaas-${var.region}-${var.env}-logs-elb"
   force_destroy = true
 
   policy = <<EOF
@@ -180,7 +180,7 @@ resource "aws_s3_bucket" "logs-elb" {
 				"AWS": "arn:aws:iam::${var.elb_id["${var.region}"]}:root"
 			},
 			"Action": "s3:PutObject",
-			"Resource": "arn:aws:s3:::tapglue-snaas-${var.region}-${var.env}-logs-elb/AWSLogs/${var.account}/*"
+			"Resource": "arn:aws:s3:::${var.account}-snaas-${var.region}-${var.env}-logs-elb/*"
 		}
 	]
 }

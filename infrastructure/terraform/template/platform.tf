@@ -1,21 +1,25 @@
+data "aws_acm_certificate" "perimeter" {
+  domain = "${var.domain}"
+
+  statuses = [
+    "ISSUED",
+  ]
+}
+
 resource "aws_instance" "monitoring" {
-  ami             = "${var.ami_minimal["${var.region}"]}"
-  instance_type   = "t2.medium"
-  key_name        = "${aws_key_pair.access.key_name}"
+  ami           = "${var.ami_minimal["${var.region}"]}"
+  instance_type = "t2.medium"
+  key_name      = "${aws_key_pair.access.key_name}"
+
   vpc_security_group_ids = [
     "${aws_security_group.platform.id}",
   ]
-  subnet_id       = "${aws_subnet.platform-a.id}"
+
+  subnet_id = "${aws_subnet.platform-a.id}"
 
   tags {
     Name = "monitoring"
   }
-}
-
-resource "aws_iam_server_certificate" "monitoring" {
-  name = "monitoring"
-  certificate_body = "${file("${path.module}/../../certs/self/self.crt")}"
-  private_key = "${file("${path.module}/../../certs/self/self.key")}"
 }
 
 resource "aws_elb" "monitoring" {
@@ -24,17 +28,20 @@ resource "aws_elb" "monitoring" {
   cross_zone_load_balancing   = true
   idle_timeout                = 30
   name                        = "monitoring"
-  security_groups             = [
+
+  security_groups = [
     "${aws_security_group.perimeter.id}",
   ]
-  subnets                     = [
+
+  subnets = [
     "${aws_subnet.perimeter-a.id}",
     "${aws_subnet.perimeter-b.id}",
   ]
 
-  access_logs                 = {
-    bucket    = "${aws_s3_bucket.logs-elb.id}"
-    interval  = 5
+  access_logs = {
+    bucket        = "${aws_s3_bucket.logs-elb.id}"
+    bucket_prefix = "monitoring"
+    interval      = 5
   }
 
   instances = [
@@ -42,11 +49,11 @@ resource "aws_elb" "monitoring" {
   ]
 
   listener {
-    instance_port       = 3000
-    instance_protocol   = "http"
-    lb_port             = 443
-    lb_protocol         = "https"
-    ssl_certificate_id  = "${aws_iam_server_certificate.monitoring.arn}"
+    instance_port      = 3000
+    instance_protocol  = "http"
+    lb_port            = 443
+    lb_protocol        = "https"
+    ssl_certificate_id = "${data.aws_acm_certificate.perimeter.arn}"
   }
 
   tags {
@@ -59,18 +66,22 @@ resource "aws_autoscaling_group" "service" {
   health_check_grace_period = 60
   health_check_type         = "EC2"
   launch_configuration      = "${aws_launch_configuration.service.name}"
-  load_balancers            = [
+
+  load_balancers = [
     "${aws_elb.gateway-http.name}",
   ]
-  max_size                  = 30
-  min_size                  = 1
-  name                      = "service"
-  termination_policies      = [
+
+  max_size = 30
+  min_size = 1
+  name     = "service"
+
+  termination_policies = [
     "OldestInstance",
     "OldestLaunchConfiguration",
     "ClosestToNextInstanceHour",
   ]
-  vpc_zone_identifier       = [
+
+  vpc_zone_identifier = [
     "${aws_subnet.platform-a.id}",
     "${aws_subnet.platform-b.id}",
   ]
@@ -89,9 +100,10 @@ resource "aws_launch_configuration" "service" {
   key_name                    = "${aws_key_pair.access.key_name}"
   iam_instance_profile        = "${aws_iam_instance_profile.ecs-agent-profile.name}"
   image_id                    = "${var.ami_ecs_agent["${var.region}"]}"
-  instance_type               =  "m4.large"
+  instance_type               = "m4.large"
   name_prefix                 = "ecs-service-"
-  security_groups             = [
+
+  security_groups = [
     "${aws_security_group.platform.id}",
   ]
 
@@ -99,7 +111,7 @@ resource "aws_launch_configuration" "service" {
     create_before_destroy = true
   }
 
-  user_data                   = <<EOF
+  user_data = <<EOF
 #!/bin/bash
 echo ECS_CLUSTER=service >> /etc/ecs/ecs.config
 
@@ -142,17 +154,20 @@ resource "aws_elb" "gateway-http" {
   cross_zone_load_balancing   = true
   idle_timeout                = 30
   name                        = "gateway-http"
-  security_groups             = [
+
+  security_groups = [
     "${aws_security_group.perimeter.id}",
   ]
-  subnets                     = [
+
+  subnets = [
     "${aws_subnet.perimeter-a.id}",
     "${aws_subnet.perimeter-b.id}",
   ]
 
-  access_logs                 = {
-    bucket    = "${aws_s3_bucket.logs-elb.id}"
-    interval  = 5
+  access_logs = {
+    bucket        = "${aws_s3_bucket.logs-elb.id}"
+    bucket_prefix = "gateway-http"
+    interval      = 5
   }
 
   health_check {
@@ -164,10 +179,11 @@ resource "aws_elb" "gateway-http" {
   }
 
   listener {
-    instance_port       = 8083
-    instance_protocol   = "tcp"
-    lb_port             = 443
-    lb_protocol         = "tcp"
+    instance_port      = 8083
+    instance_protocol  = "http"
+    lb_port            = 443
+    lb_protocol        = "https"
+    ssl_certificate_id = "${data.aws_acm_certificate.perimeter.arn}"
   }
 
   tags {

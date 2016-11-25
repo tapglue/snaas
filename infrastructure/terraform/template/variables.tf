@@ -32,6 +32,12 @@ variable "ami_minimal" {
   type        = "map"
 }
 
+variable "domain" {
+  default     = ""
+  description = "Domain for public termination of the env."
+  type        = "string"
+}
+
 variable "elb_id" {
   default = {
     "us-east-1"      = "127311923021"
@@ -95,8 +101,8 @@ variable "pg_password" {
 
 variable "version" {
   default = {
-    "gateway-http" = "95"
-    "sims"         = "95"
+    "gateway-http" = "110"
+    "sims"         = "110"
   }
 
   description = "Versions used for deployed services"
