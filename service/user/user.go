@@ -104,7 +104,7 @@ type User struct {
 	CustomID       string            `json:"custom_id,omitempty"`
 	Deleted        bool              `json:"deleted"`
 	Enabled        bool              `json:"enabled"`
-	Email          string            `json:"email"`
+	Email          string            `json:"email,omitempty"`
 	Firstname      string            `json:"first_name"`
 	FollowerCount  int               `json:"-"`
 	FollowingCount int               `json:"-"`
@@ -122,7 +122,7 @@ type User struct {
 	SessionToken   string            `json:"-"`
 	SocialIDs      map[string]string `json:"social_ids,omitempty"`
 	URL            string            `json:"url,omitempty"`
-	Username       string            `json:"user_name"`
+	Username       string            `json:"user_name,omitempty"`
 	CreatedAt      time.Time         `json:"created_at"`
 	UpdatedAt      time.Time         `json:"updated_at"`
 }
