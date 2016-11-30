@@ -489,9 +489,9 @@ func FeedNotificationsSelf(
 		var (
 			fs      = am.filterFollowings(origin)
 			sources = []source{
-				sourceComment(objects, currentApp, ps.IDs()...),
+				sourceComment(objects, currentApp, origin, ps.IDs()...),
 				sourceConnection(fs.connections(), opts),
-				sourceLikes(events, currentApp, opts, ps.IDs()...),
+				sourceLikes(events, currentApp, opts, origin, ps.IDs()...),
 				sourceTarget(events, currentApp, origin, opts),
 			}
 		)
@@ -973,6 +973,7 @@ func neighbours(
 func sourceComment(
 	objects object.Service,
 	currentApp *app.App,
+	origin uint64,
 	postIDs ...uint64,
 ) source {
 	if len(postIDs) == 0 {
@@ -996,6 +997,10 @@ func sourceComment(
 		}
 
 		for _, comment := range cs {
+			if comment.OwnerID == origin {
+				continue
+			}
+
 			id, err := flake.NextID("comment-events")
 			if err != nil {
 				return nil, err
@@ -1100,6 +1105,7 @@ func sourceLikes(
 	events event.Service,
 	currentApp *app.App,
 	opts event.QueryOptions,
+	origin uint64,
 	postIDs ...uint64,
 ) source {
 	if len(postIDs) == 0 {
@@ -1116,7 +1122,22 @@ func sourceLikes(
 	}
 
 	return func() (event.List, error) {
-		return events.Query(currentApp.Namespace(), opts)
+		es, err := events.Query(currentApp.Namespace(), opts)
+		if err != nil {
+			return nil, err
+		}
+
+		fs := event.List{}
+
+		for _, e := range es {
+			if e.UserID == origin {
+				continue
+			}
+
+			fs = append(fs, e)
+		}
+
+		return fs, nil
 	}
 }
 
