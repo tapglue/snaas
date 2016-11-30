@@ -163,9 +163,10 @@ resource "aws_iam_user_policy" "state-change-sr" {
    "Statement":[{
       "Effect":"Allow",
       "Action": [
-        "sqs:SendMessage",
+        "sqs:GetQueueUrl",
+        "sqs:DeleteMessage",
         "sqs:ReceiveMessage",
-        "sqs:GetQueueUrl"
+        "sqs:SendMessage"
       ],
       "Resource":"arn:aws:sqs:*:${var.account}:*-state-change"
       }
