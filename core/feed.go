@@ -216,6 +216,7 @@ func FeedEvents(
 			sources = []source{
 				sourceConnection(
 					append(am.followers(origin), am.friends(origin)...),
+					origin,
 					opts,
 				),
 				sourceGlobal(events, currentApp, opts),
@@ -239,7 +240,7 @@ func FeedEvents(
 
 			cs := append(a.followings(u.ID), a.friends(u.ID)...)
 
-			sources = append(sources, sourceConnection(cs, opts))
+			sources = append(sources, sourceConnection(cs, origin, opts))
 			us = append(us, am.users()...)
 		}
 
@@ -335,6 +336,7 @@ func FeedNews(
 			sources = []source{
 				sourceConnection(
 					append(am.followers(origin), am.friends(origin)...),
+					origin,
 					eventOpts,
 				),
 				sourceGlobal(events, currentApp, eventOpts),
@@ -358,7 +360,7 @@ func FeedNews(
 
 			cs := append(a.followings(u.ID), a.friends(u.ID)...)
 
-			sources = append(sources, sourceConnection(cs, eventOpts))
+			sources = append(sources, sourceConnection(cs, origin, eventOpts))
 			us = append(us, am.users()...)
 		}
 
@@ -490,7 +492,7 @@ func FeedNotificationsSelf(
 			fs      = am.filterFollowings(origin)
 			sources = []source{
 				sourceComment(objects, currentApp, origin, ps.IDs()...),
-				sourceConnection(fs.connections(), opts),
+				sourceConnection(fs.connections(), origin, opts),
 				sourceLikes(events, currentApp, opts, origin, ps.IDs()...),
 				sourceTarget(events, currentApp, origin, opts),
 			}
@@ -1024,7 +1026,11 @@ func sourceComment(
 }
 
 // sourceConnection creates follow events for the given connections.
-func sourceConnection(cs connection.List, opts event.QueryOptions) source {
+func sourceConnection(
+	cs connection.List,
+	origin uint64,
+	opts event.QueryOptions,
+) source {
 	if len(cs) == 0 {
 		return func() (event.List, error) {
 			return event.List{}, nil
@@ -1058,16 +1064,23 @@ func sourceConnection(cs connection.List, opts event.QueryOptions) source {
 				return nil, err
 			}
 
+			userID := con.FromID
+
+			if con.FromID == origin {
+				userID = con.ToID
+			}
+
 			es = append(es, &event.Event{
 				Enabled: true,
 				ID:      id,
 				Owned:   true,
+				// FIXME: Remove target.
 				Target: &event.Target{
 					ID:   strconv.FormatUint(con.ToID, 10),
 					Type: event.TargetUser,
 				},
 				Type:       t,
-				UserID:     con.FromID,
+				UserID:     userID,
 				Visibility: event.VisibilityPrivate,
 				CreatedAt:  con.CreatedAt,
 				UpdatedAt:  con.UpdatedAt,
