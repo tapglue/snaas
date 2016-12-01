@@ -69,7 +69,8 @@ const (
 		ON
 			%s.users(((json_data->>'email')::CITEXT))
 		WHERE
-			(json_data->>'enabled')::BOOL = true`
+			(json_data->>'enabled')::BOOL = true
+			AND (json_data->>'email')::TEXT != ''`
 	pgIndexID = `
 		CREATE INDEX
 			%s
@@ -97,7 +98,8 @@ const (
 		ON
 			%s.users(((json_data->>'user_name')::CITEXT))
 		WHERE
-			(json_data->>'enabled')::BOOL = true`
+			(json_data->>'enabled')::BOOL = true
+			AND (json_data->>'user_name')::TEXT != ''`
 )
 
 type pgService struct {
