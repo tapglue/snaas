@@ -242,6 +242,13 @@ func LikeList(
 			return nil, err
 		}
 
+		for _, u := range um {
+			err = enrichRelation(connections, currentApp, origin, u)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		return &LikeFeed{
 			Likes:   es,
 			UserMap: um,
@@ -256,7 +263,7 @@ type LikesUserFunc func(
 	opts event.QueryOptions,
 ) (*LikeFeed, error)
 
-// LikesUserFunc returns all Likes for the given user.
+// LikesUser returns all Likes for the given user.
 func LikesUser(
 	connections connection.Service,
 	events event.Service,
@@ -319,6 +326,13 @@ func LikesUser(
 		um, err = fillupUsersForPosts(users, currentApp, origin, um, ps)
 		if err != nil {
 			return nil, err
+		}
+
+		for _, u := range um {
+			err = enrichRelation(connections, currentApp, origin, u)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return &LikeFeed{

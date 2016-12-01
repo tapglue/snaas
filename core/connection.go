@@ -31,7 +31,7 @@ func ConnectionByState(
 ) ConnectionByStateFunc {
 	return func(
 		currentApp *app.App,
-		originID uint64,
+		origin uint64,
 		state connection.State,
 		opts connection.QueryOptions,
 	) (*ConnectionFeed, error) {
@@ -45,7 +45,7 @@ func ConnectionByState(
 		ics, err := connections.Query(currentApp.Namespace(), connection.QueryOptions{
 			Before:  opts.Before,
 			Enabled: &defaultEnabled,
-			FromIDs: []uint64{originID},
+			FromIDs: []uint64{origin},
 			Limit:   opts.Limit,
 			States:  []connection.State{state},
 		})
@@ -58,7 +58,7 @@ func ConnectionByState(
 			Enabled: &defaultEnabled,
 			Limit:   opts.Limit,
 			States:  []connection.State{state},
-			ToIDs:   []uint64{originID},
+			ToIDs:   []uint64{origin},
 		})
 		if err != nil {
 			return nil, err
@@ -82,7 +82,7 @@ func ConnectionByState(
 		ids := []uint64{}
 
 		for _, c := range cons {
-			if c.FromID == originID {
+			if c.FromID == origin {
 				ids = append(ids, c.ToID)
 			} else {
 				ids = append(ids, c.FromID)
@@ -96,6 +96,13 @@ func ConnectionByState(
 		)
 		if err != nil {
 			return nil, err
+		}
+
+		for _, u := range um {
+			err = enrichRelation(connections, currentApp, origin, u)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		return &ConnectionFeed{

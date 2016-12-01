@@ -201,6 +201,13 @@ func CommentList(
 			return nil, err
 		}
 
+		for _, u := range um {
+			err = enrichRelation(connections, currentApp, origin, u)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		return &CommentFeed{Comments: cs, UserMap: um}, nil
 	}
 }
@@ -254,6 +261,7 @@ type CommentUpdateFunc func(
 	new *object.Object,
 ) (*object.Object, error)
 
+// CommentUpdate replaces the given comment with new values.
 func CommentUpdate(
 	objects object.Service,
 ) CommentUpdateFunc {
@@ -306,6 +314,7 @@ func CommentUpdate(
 	}
 }
 
+// IsComment indicates if Object is a comment.
 func IsComment(o *object.Object) bool {
 	if o.Type != TypeComment {
 		return false
