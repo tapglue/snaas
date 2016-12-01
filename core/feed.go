@@ -581,6 +581,13 @@ func FeedPosts(
 
 		ps = append(ps, gs...)
 
+		os, err := ownPosts(objects, currentApp, origin, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		ps = append(ps, os...)
+
 		sort.Sort(ps)
 
 		if len(ps) > opts.Limit {
@@ -969,6 +976,34 @@ func neighbours(
 	}
 
 	return am, nil
+}
+
+func ownPosts(
+	objects object.Service,
+	currentApp *app.App,
+	origin uint64,
+	opts object.QueryOptions,
+) (PostList, error) {
+	opts.OwnerIDs = []uint64{
+		origin,
+	}
+	opts.Owned = &defaultOwned
+	opts.Types = []string{
+		TypePost,
+	}
+	opts.Visibilities = []object.Visibility{
+		object.VisibilityPrivate,
+		object.VisibilityConnection,
+		object.VisibilityPublic,
+		object.VisibilityGlobal,
+	}
+
+	os, err := objects.Query(currentApp.Namespace(), opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return postsFromObjects(os), nil
 }
 
 // sourceComment creates comment events for the given posts.
