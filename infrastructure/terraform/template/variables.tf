@@ -101,8 +101,8 @@ variable "pg_password" {
 
 variable "version" {
   default = {
-    "gateway-http" = "130"
-    "sims"         = "130"
+    "gateway-http" = "138"
+    "sims"         = "138"
   }
 
   description = "Versions used for deployed services"
