@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/tapglue/snaas/platform/generate"
+	"github.com/tapglue/snaas/platform/sns"
 )
 
 type prepareFunc func(t *testing.T, namespace string) Service
@@ -149,7 +150,7 @@ func testServiceQuery(t *testing.T, p prepareFunc) {
 	}
 
 	ds, err = service.Query(namespace, QueryOptions{
-		Platforms: []Platform{
+		Platforms: []sns.Platform{
 			PlatformIOSSandbox,
 		},
 	})

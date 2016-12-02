@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/tapglue/snaas/core"
-	"github.com/tapglue/snaas/service/device"
+	"github.com/tapglue/snaas/platform/sns"
 )
 
 // DeviceDelete removes a user's device.
@@ -58,15 +58,15 @@ func DeviceUpdate(fn core.DeviceUpdateFunc) Handler {
 
 type payloadDevice struct {
 	language string
-	platform device.Platform
+	platform sns.Platform
 	token    string
 }
 
 func (p *payloadDevice) UnmarshalJSON(raw []byte) error {
 	f := struct {
-		Language string          `json:"language"`
-		Platform device.Platform `json:"platform"`
-		Token    string          `json:"token"`
+		Language string       `json:"language"`
+		Platform sns.Platform `json:"platform"`
+		Token    string       `json:"token"`
 	}{}
 
 	err := json.Unmarshal(raw, &f)
