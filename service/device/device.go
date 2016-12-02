@@ -7,6 +7,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/tapglue/snaas/platform/service"
+	"github.com/tapglue/snaas/platform/sns"
 )
 
 const (
@@ -16,9 +17,9 @@ const (
 
 // Platform supported for a Device.
 const (
-	PlatformIOSSandbox Platform = iota + 1
-	PlatformIOS
-	PlatformAndroid
+	PlatformIOS        = sns.PlatformAPNS
+	PlatformIOSSandbox = sns.PlatformAPNSSandbox
+	PlatformAndroid    = sns.PlatformGCM
 )
 
 // Device represents a physical device like mobile phone or tablet of a user.
@@ -29,7 +30,7 @@ type Device struct {
 	EndpointARN string
 	ID          uint64
 	Language    string
-	Platform    Platform
+	Platform    sns.Platform
 	Token       string
 	UserID      uint64
 	CreatedAt   time.Time
@@ -68,9 +69,6 @@ func (d *Device) Validate() error {
 // List is a collection of devices.
 type List []*Device
 
-// Platform of a device.
-type Platform uint8
-
 // QueryOptions is used to narrow-down user queries.
 type QueryOptions struct {
 	Deleted      *bool
@@ -78,7 +76,7 @@ type QueryOptions struct {
 	Disabled     *bool
 	EndpointARNs []string
 	IDs          []uint64
-	Platforms    []Platform
+	Platforms    []sns.Platform
 	UserIDs      []uint64
 }
 

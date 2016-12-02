@@ -16,6 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/tapglue/snaas/core"
+	pErr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/metrics"
 	platformSNS "github.com/tapglue/snaas/platform/sns"
 	platformSQS "github.com/tapglue/snaas/platform/sqs"
@@ -24,6 +25,7 @@ import (
 	"github.com/tapglue/snaas/service/device"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/platform"
 	"github.com/tapglue/snaas/service/user"
 )
 
@@ -50,7 +52,6 @@ var (
 func main() {
 	var (
 		begin = time.Now()
-		pApps = platformApps{}
 
 		awsID         = flag.String("aws.id", "", "Identifier for AWS requests")
 		awsRegion     = flag.String("aws.region", "us-east-1", "AWS region to operate in")
@@ -58,7 +59,6 @@ func main() {
 		postgresURL   = flag.String("postgres.url", "", "Postgres URL to connect to")
 		telemetryAddr = flag.String("telemetry.addr", ":9001", "Address to expose telemetry on")
 	)
-	flag.Var(&pApps, "app", "Repeated platform apps.")
 	flag.Parse()
 
 	logger := log.NewContext(
@@ -189,6 +189,11 @@ func main() {
 	)(objects)
 	objects = object.LogServiceMiddleware(logger, storeService)(objects)
 
+	var platforms platform.Service
+	platforms = platform.PostgresService(pgClient)
+	// TODO: Implement instrumentaiton middleware.
+	// TODO: Implement logging middleware.
+
 	var users user.Service
 	users = user.PostgresService(pgClient)
 	users = user.InstrumentMiddleware(
@@ -271,9 +276,19 @@ func main() {
 
 	go func() {
 		for c := range changec {
-			a, err := appForARN(core.AppFetch(apps), pApps, c.Resource)
+			p, err := core.PlatformFetchByARN(platforms)(c.Resource)
 			if err != nil {
-				if isPlatformNotFound(err) {
+				if pErr.IsNotFound(err) {
+					continue
+				}
+
+				logger.Log("err", err, "lifecycle", "abort")
+				os.Exit(1)
+			}
+
+			a, err := core.AppFetch(apps)(p.AppID)
+			if err != nil {
+				if core.IsNotFound(err) {
 					continue
 				}
 
@@ -367,8 +382,8 @@ func main() {
 				platformSNS.EndpointRetrieve(snsAPI),
 				platformSNS.EndpointUpdate(snsAPI),
 			),
+			core.PlatformFetchActive(platforms),
 			platformSNS.Push(snsAPI),
-			pApps,
 		),
 	}
 

@@ -85,7 +85,7 @@ func DeviceListUser(devices device.Service) DeviceListUserFunc {
 		return devices.Query(currentApp.Namespace(), device.QueryOptions{
 			Deleted:  &defaultDeleted,
 			Disabled: &defaultDeleted,
-			Platforms: []device.Platform{
+			Platforms: []sns.Platform{
 				device.PlatformIOSSandbox,
 				device.PlatformIOS,
 				device.PlatformAndroid,
@@ -168,7 +168,7 @@ type DeviceUpdateFunc func(
 	currentApp *app.App,
 	origin Origin,
 	deviceID string,
-	platform device.Platform,
+	platform sns.Platform,
 	token string,
 	language string,
 ) error
@@ -179,13 +179,13 @@ func DeviceUpdate(devices device.Service) DeviceUpdateFunc {
 		currentApp *app.App,
 		origin Origin,
 		deviceID string,
-		platform device.Platform,
+		platform sns.Platform,
 		token string,
 		language string,
 	) error {
 		ds, err := devices.Query(currentApp.Namespace(), device.QueryOptions{
 			Deleted: &defaultDeleted,
-			Platforms: []device.Platform{
+			Platforms: []sns.Platform{
 				platform,
 			},
 			UserIDs: []uint64{
