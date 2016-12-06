@@ -99,5 +99,6 @@ func testUser() *user.User {
 		),
 		Enabled:  true,
 		Password: generate.RandomString(8),
+		Username: generate.RandomStringSafe(6),
 	}
 }

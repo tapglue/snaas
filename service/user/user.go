@@ -2,6 +2,7 @@ package user
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/asaskevich/govalidator"
@@ -58,6 +59,19 @@ func (m Map) Merge(x Map) Map {
 	}
 
 	return m
+}
+
+// ToList returns the Map as an ordered List.
+func (m Map) ToList() List {
+	us := List{}
+
+	for _, u := range m {
+		us = append(us, u)
+	}
+
+	sort.Sort(us)
+
+	return us
 }
 
 // Metadata is a bucket to provide additional user information.

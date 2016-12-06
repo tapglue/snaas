@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/tapglue/snaas/service/rule"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	awsSession "github.com/aws/aws-sdk-go/aws/session"
@@ -16,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/tapglue/snaas/core"
+	pErr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/metrics"
 	platformSNS "github.com/tapglue/snaas/platform/sns"
 	platformSQS "github.com/tapglue/snaas/platform/sqs"
@@ -24,6 +27,7 @@ import (
 	"github.com/tapglue/snaas/service/device"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/platform"
 	"github.com/tapglue/snaas/service/user"
 )
 
@@ -50,7 +54,6 @@ var (
 func main() {
 	var (
 		begin = time.Now()
-		pApps = platformApps{}
 
 		awsID         = flag.String("aws.id", "", "Identifier for AWS requests")
 		awsRegion     = flag.String("aws.region", "us-east-1", "AWS region to operate in")
@@ -58,7 +61,6 @@ func main() {
 		postgresURL   = flag.String("postgres.url", "", "Postgres URL to connect to")
 		telemetryAddr = flag.String("telemetry.addr", ":9001", "Address to expose telemetry on")
 	)
-	flag.Var(&pApps, "app", "Repeated platform apps.")
 	flag.Parse()
 
 	logger := log.NewContext(
@@ -189,6 +191,16 @@ func main() {
 	)(objects)
 	objects = object.LogServiceMiddleware(logger, storeService)(objects)
 
+	var platforms platform.Service
+	platforms = platform.PostgresService(pgClient)
+	// TODO: Implement instrumentaiton middleware.
+	// TODO: Implement logging middleware.
+
+	var rules rule.Service
+	rules = rule.PostgresService(pgClient)
+	// TODO: Implement instrumentaiton middleware.
+	// TODO: Implement logging middleware.
+
 	var users user.Service
 	users = user.PostgresService(pgClient)
 	users = user.InstrumentMiddleware(
@@ -271,9 +283,19 @@ func main() {
 
 	go func() {
 		for c := range changec {
-			a, err := appForARN(core.AppFetch(apps), pApps, c.Resource)
+			p, err := core.PlatformFetchByARN(platforms)(c.Resource)
 			if err != nil {
-				if isPlatformNotFound(err) {
+				if pErr.IsNotFound(err) {
+					continue
+				}
+
+				logger.Log("err", err, "lifecycle", "abort")
+				os.Exit(1)
+			}
+
+			a, err := core.AppFetch(apps)(p.AppID)
+			if err != nil {
+				if core.IsNotFound(err) {
 					continue
 				}
 
@@ -297,15 +319,8 @@ func main() {
 			core.AppFetch(apps),
 			conSource,
 			batchc,
-			conRuleFollower(
-				core.UserFetch(users),
-			),
-			conRuleFriendConfirmed(
-				core.UserFetch(users),
-			),
-			conRuleFriendRequest(
-				core.UserFetch(users),
-			),
+			core.PipelineConnection(users),
+			core.RuleListActive(rules),
 		)
 		if err != nil {
 			logger.Log("err", err, "lifecycle", "abort")
@@ -318,13 +333,8 @@ func main() {
 			core.AppFetch(apps),
 			eventSource,
 			batchc,
-			eventRuleLikeCreated(
-				core.ConnectionFollowerIDs(connections),
-				core.ConnectionFriendIDs(connections),
-				core.PostFetch(objects),
-				core.UserFetch(users),
-				core.UsersFetch(users),
-			),
+			core.PipelineEvent(objects, users),
+			core.RuleListActive(rules),
 		)
 		if err != nil {
 			logger.Log("err", err, "lifecycle", "abort")
@@ -337,19 +347,8 @@ func main() {
 			core.AppFetch(apps),
 			objectSource,
 			batchc,
-			objectRuleCommentCreated(
-				core.ConnectionFollowerIDs(connections),
-				core.ConnectionFriendIDs(connections),
-				core.PostFetch(objects),
-				core.UserFetch(users),
-				core.UsersFetch(users),
-			),
-			objectRulePostCreated(
-				core.ConnectionFollowerIDs(connections),
-				core.ConnectionFriendIDs(connections),
-				core.UserFetch(users),
-				core.UsersFetch(users),
-			),
+			core.PipelineObject(connections, objects, users),
+			core.RuleListActive(rules),
 		)
 		if err != nil {
 			logger.Log("err", err, "lifecycle", "abort")
@@ -367,8 +366,8 @@ func main() {
 				platformSNS.EndpointRetrieve(snsAPI),
 				platformSNS.EndpointUpdate(snsAPI),
 			),
+			core.PlatformFetchActive(platforms),
 			platformSNS.Push(snsAPI),
-			pApps,
 		),
 	}
 

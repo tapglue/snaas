@@ -23,7 +23,7 @@ func (s *memService) Count(ns string, opts QueryOptions) (int, error) {
 		return 0, err
 	}
 
-	return len(filterMap(s.users[ns], opts)), nil
+	return len(filterList(s.users[ns].ToList(), opts)), nil
 }
 
 func (s *memService) Put(ns string, input *User) (*User, error) {
@@ -89,7 +89,7 @@ func (s *memService) Query(ns string, opts QueryOptions) (List, error) {
 		return nil, err
 	}
 
-	us := filterMap(s.users[ns], opts)
+	us := filterList(s.users[ns].ToList(), opts)
 
 	if opts.Limit > 0 && len(us) > opts.Limit {
 		us = us[:opts.Limit]
@@ -110,7 +110,7 @@ func (s *memService) Search(ns string, opts QueryOptions) (List, error) {
 	opts.Lastnames = nil
 	opts.Usernames = nil
 
-	us := filterMap(s.users[ns], opts)
+	us := filterList(s.users[ns].ToList(), opts)
 	us = searchUsers(us, sOpts)
 
 	return us, nil
@@ -153,10 +153,10 @@ func copy(u *User) *User {
 	return &old
 }
 
-func filterMap(um Map, opts QueryOptions) List {
-	us := List{}
+func filterList(us List, opts QueryOptions) List {
+	rs := List{}
 
-	for id, u := range um {
+	for _, u := range us {
 		if !inTypes(u.CustomID, opts.CustomIDs) {
 			continue
 		}
@@ -173,7 +173,7 @@ func filterMap(um Map, opts QueryOptions) List {
 			continue
 		}
 
-		if !inIDs(id, opts.IDs) {
+		if !inIDs(u.ID, opts.IDs) {
 			continue
 		}
 
@@ -201,10 +201,10 @@ func filterMap(um Map, opts QueryOptions) List {
 			continue
 		}
 
-		us = append(us, u)
+		rs = append(rs, u)
 	}
 
-	return us
+	return rs
 }
 
 func inIDs(id uint64, ids []uint64) bool {

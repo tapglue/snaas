@@ -12,8 +12,25 @@ infrastructure:
  ✔ generate pg password during setup @done (16-11-11 11:10)
  ☐ fix pg monitoring role
  ☐ setup grafana and prometheus on monitoring host
+ ☐ setup monitoring dashboard definition
+ ☐ vpc pairing template
+ ☐ pganalyze template
+ ☐ handle dependencies with gvt
+ ☐ create remote-exec provisioner for DB bootstrap
+ ☐ make binaries available with Github release
+ ☐ setup alertmanager and pagerduty
+ ☐ setup cloudwatch logging
+
+terraformer:
+  ☐ verify account
+  ☐ ask for cidr_block
+  ☐ user MFA (if possible)
+  ☐ sync vars and key
 
 code:
  ✔ move event condition code @done (16-11-11 11:10)
  ✔ add missing event indeces @done (16-11-12 12:36)
- ☐ enable TLS and load certs
+ ✔ enable TLS and load certs @done (16-12-02 15:41)
+ ☐ Implement instrumentation and log middleware for platform.Service
+ ☐ Complete postgres rule.Service
+ ☐ Implement instrumentation and log middleware for rule.Service

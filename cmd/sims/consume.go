@@ -14,6 +14,7 @@ import (
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/rule"
 )
 
 type ackFunc func() error
@@ -21,25 +22,18 @@ type ackFunc func() error
 type batch struct {
 	ackFunc  ackFunc
 	app      *app.App
-	messages messages
+	messages core.Messages
 }
-
-type message struct {
-	message   string
-	recipient uint64
-	urn       string
-}
-
-type messages []*message
 
 func consumeConnection(
 	appFetch core.AppFetchFunc,
 	conSource connection.Source,
 	batchc chan<- batch,
-	ruleFns ...conRuleFunc,
+	pipeline core.PipelineConnectionFunc,
+	rules core.RuleListActiveFunc,
 ) error {
 	for {
-		c, err := conSource.Consume()
+		change, err := conSource.Consume()
 		if err != nil {
 			if connection.IsEmptySource(err) {
 				continue
@@ -47,26 +41,23 @@ func consumeConnection(
 			return err
 		}
 
-		currentApp, err := appForNamespace(appFetch, c.Namespace)
+		currentApp, err := appForNamespace(appFetch, change.Namespace)
 		if err != nil {
 			return err
 		}
 
-		ms := messages{}
+		rs, err := rules(currentApp, rule.TypeConnection)
+		if err != nil {
+			return err
+		}
 
-		for _, rule := range ruleFns {
-			msgs, err := rule(currentApp, c)
-			if err != nil {
-				return err
-			}
-
-			for _, msg := range msgs {
-				ms = append(ms, msg)
-			}
+		ms, err := pipeline(currentApp, change, rs...)
+		if err != nil {
+			return err
 		}
 
 		if len(ms) == 0 {
-			err := conSource.Ack(c.AckID)
+			err := conSource.Ack(change.AckID)
 			if err != nil {
 				return err
 			}
@@ -74,7 +65,7 @@ func consumeConnection(
 			continue
 		}
 
-		batchc <- batchMessages(currentApp, conSource, c.AckID, ms)
+		batchc <- batchMessages(currentApp, conSource, change.AckID, ms)
 	}
 }
 
@@ -131,14 +122,16 @@ func consumeEndpointChange(
 		}
 	}
 }
+
 func consumeEvent(
 	appFetch core.AppFetchFunc,
 	eventSource event.Source,
 	batchc chan<- batch,
-	ruleFns ...eventRuleFunc,
+	pipeline core.PipelineEventFunc,
+	rules core.RuleListActiveFunc,
 ) error {
 	for {
-		c, err := eventSource.Consume()
+		change, err := eventSource.Consume()
 		if err != nil {
 			if event.IsEmptySource(err) {
 				continue
@@ -146,26 +139,23 @@ func consumeEvent(
 			return err
 		}
 
-		currentApp, err := appForNamespace(appFetch, c.Namespace)
+		currentApp, err := appForNamespace(appFetch, change.Namespace)
 		if err != nil {
 			return err
 		}
 
-		ms := messages{}
+		rs, err := rules(currentApp, rule.TypeEvent)
+		if err != nil {
+			return err
+		}
 
-		for _, rule := range ruleFns {
-			rs, err := rule(currentApp, c)
-			if err != nil {
-				return err
-			}
-
-			for _, msg := range rs {
-				ms = append(ms, msg)
-			}
+		ms, err := pipeline(currentApp, change, rs...)
+		if err != nil {
+			return err
 		}
 
 		if len(ms) == 0 {
-			err = eventSource.Ack(c.AckID)
+			err = eventSource.Ack(change.AckID)
 			if err != nil {
 				return err
 			}
@@ -173,7 +163,7 @@ func consumeEvent(
 			continue
 		}
 
-		batchc <- batchMessages(currentApp, eventSource, c.AckID, ms)
+		batchc <- batchMessages(currentApp, eventSource, change.AckID, ms)
 	}
 }
 
@@ -181,10 +171,11 @@ func consumeObject(
 	appFetch core.AppFetchFunc,
 	objectSource object.Source,
 	batchc chan<- batch,
-	ruleFns ...objectRuleFunc,
+	pipeline core.PipelineObjectFunc,
+	rules core.RuleListActiveFunc,
 ) error {
 	for {
-		c, err := objectSource.Consume()
+		change, err := objectSource.Consume()
 		if err != nil {
 			if object.IsEmptySource(err) {
 				continue
@@ -192,26 +183,23 @@ func consumeObject(
 			return err
 		}
 
-		currentApp, err := appForNamespace(appFetch, c.Namespace)
+		currentApp, err := appForNamespace(appFetch, change.Namespace)
 		if err != nil {
 			return err
 		}
 
-		ms := messages{}
+		rs, err := rules(currentApp, rule.TypeObject)
+		if err != nil {
+			return err
+		}
 
-		for _, rule := range ruleFns {
-			rs, err := rule(currentApp, c)
-			if err != nil {
-				return err
-			}
-
-			for _, msg := range rs {
-				ms = append(ms, msg)
-			}
+		ms, err := pipeline(currentApp, change, rs...)
+		if err != nil {
+			return err
 		}
 
 		if len(ms) == 0 {
-			err := objectSource.Ack(c.AckID)
+			err := objectSource.Ack(change.AckID)
 			if err != nil {
 				return err
 			}
@@ -219,7 +207,7 @@ func consumeObject(
 			continue
 		}
 
-		batchc <- batchMessages(currentApp, objectSource, c.AckID, ms)
+		batchc <- batchMessages(currentApp, objectSource, change.AckID, ms)
 	}
 }
 
@@ -227,7 +215,7 @@ func batchMessages(
 	currentApp *app.App,
 	acker source.Acker,
 	ackID string,
-	ms messages,
+	ms core.Messages,
 ) batch {
 	return batch{
 		ackFunc: func(acked bool, ackID string) ackFunc {
