@@ -175,7 +175,7 @@ func (o *Object) Validate() error {
 		)
 	}
 
-	if len(o.Tags) > 5 {
+	if len(o.Tags) > 25 {
 		return wrapError(ErrInvalidObject, "too many tags")
 	}
 

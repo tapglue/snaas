@@ -79,25 +79,6 @@ func TestObjectValidate(t *testing.T) {
 			Type:       "post",
 			Visibility: VisibilityConnection,
 		},
-		// Too many Tags
-		{
-			OwnerID: 123,
-			Tags: []string{
-				"tag",
-				"tag",
-				"tag",
-				"tag",
-				"tag",
-				"tag",
-				"tag",
-				"tag",
-				"tag",
-				"tag",
-				"tag",
-			},
-			Type:       "post",
-			Visibility: VisibilityConnection,
-		},
 		// Missing Type
 		{
 			OwnerID:    123,
