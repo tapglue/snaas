@@ -1,8 +1,6 @@
 package core
 
 import (
-	"fmt"
-
 	pErr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/pg"
 	"github.com/tapglue/snaas/platform/sns"
@@ -34,8 +32,6 @@ func PlatformCreate(
 		cert, key string,
 	) (*platform.Platform, error) {
 		arn := ""
-
-		fmt.Printf("\n%s\n%s\n%#v\n\n", cert, key, p)
 
 		switch p.Ecosystem {
 		case platform.Android:
