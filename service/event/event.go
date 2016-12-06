@@ -54,6 +54,38 @@ type Event struct {
 	UpdatedAt  time.Time  `json:"updated_at"`
 }
 
+// MatchOpts indicates if the Event matches the given QueryOptions.
+func (e *Event) MatchOpts(opts *QueryOptions) bool {
+	if opts == nil {
+		return true
+	}
+
+	if opts.Enabled != nil && e.Enabled != *opts.Enabled {
+		return false
+	}
+
+	if opts.Owned != nil && e.Owned != *opts.Owned {
+		return false
+	}
+
+	if len(opts.Types) > 0 {
+		discard := true
+
+		for _, t := range opts.Types {
+			if e.Type == t {
+				discard = false
+				break
+			}
+		}
+
+		if discard {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Validate performs semantic checks on the passed Event values for correctness.
 func (e Event) Validate() error {
 	if e.Type == "" {
@@ -141,20 +173,20 @@ type Producer interface {
 
 // QueryOptions are used to narrow down Event queries.
 type QueryOptions struct {
-	After               time.Time
-	Before              time.Time
-	Enabled             *bool
-	ExternalObjectIDs   []string
-	ExternalObjectTypes []string
-	IDs                 []uint64
-	Limit               int
-	ObjectIDs           []uint64
-	Owned               *bool
-	TargetIDs           []string
-	TargetTypes         []string
-	Types               []string
-	UserIDs             []uint64
-	Visibilities        []Visibility
+	After               time.Time    `json:"-"`
+	Before              time.Time    `json:"-"`
+	Enabled             *bool        `json:"enabled"`
+	ExternalObjectIDs   []string     `json:"-"`
+	ExternalObjectTypes []string     `json:"-"`
+	IDs                 []uint64     `json:"ids"`
+	Limit               int          `json:"-"`
+	ObjectIDs           []uint64     `json:"object_ids"`
+	Owned               *bool        `json:"owned"`
+	TargetIDs           []string     `json:"-"`
+	TargetTypes         []string     `json:"-"`
+	Types               []string     `json:"types"`
+	UserIDs             []uint64     `json:"user_ids"`
+	Visibilities        []Visibility `json:"visibilities"`
 }
 
 // Period is a pre-defined time duration.

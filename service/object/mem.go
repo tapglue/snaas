@@ -2,6 +2,7 @@ package object
 
 import (
 	"math"
+	"sort"
 	"time"
 
 	"github.com/tapglue/snaas/platform/flake"
@@ -28,7 +29,7 @@ func (s *memService) Count(ns string, opts QueryOptions) (int, error) {
 		return 0, ErrNamespaceNotFound
 	}
 
-	return len(filterMap(bucket, opts)), nil
+	return len(filterList(listFromMap(bucket), opts)), nil
 }
 
 func (s *memService) Put(ns string, object *Object) (*Object, error) {
@@ -104,7 +105,7 @@ func (s *memService) Query(ns string, opts QueryOptions) (List, error) {
 		return nil, ErrNamespaceNotFound
 	}
 
-	return filterMap(bucket, opts), nil
+	return filterList(listFromMap(bucket), opts), nil
 }
 
 func (s *memService) Setup(ns string) error {
@@ -145,10 +146,22 @@ func inIDs(id uint64, ids []uint64) bool {
 	return keep
 }
 
-func filterMap(om Map, opts QueryOptions) List {
-	os := []*Object{}
+func listFromMap(om Map) List {
+	os := List{}
 
-	for id, object := range om {
+	for _, object := range om {
+		os = append(os, object)
+	}
+
+	sort.Sort(os)
+
+	return os
+}
+
+func filterList(os List, opts QueryOptions) List {
+	rs := List{}
+
+	for _, object := range os {
 		if !opts.Before.IsZero() && object.CreatedAt.UTC().After(opts.Before.UTC()) {
 			continue
 		}
@@ -167,7 +180,7 @@ func filterMap(om Map, opts QueryOptions) List {
 			continue
 		}
 
-		if opts.ID != nil && id != *opts.ID {
+		if opts.ID != nil && object.ID != *opts.ID {
 			continue
 		}
 
@@ -197,20 +210,20 @@ func filterMap(om Map, opts QueryOptions) List {
 			continue
 		}
 
-		os = append(os, object)
+		rs = append(rs, object)
 	}
 
-	if len(os) == 0 {
-		return os
+	if len(rs) == 0 {
+		return rs
 	}
 
 	if opts.Limit > 0 {
-		l := math.Min(float64(len(os)), float64(opts.Limit))
+		l := math.Min(float64(len(rs)), float64(opts.Limit))
 
-		return os[:int(l)]
+		return rs[:int(l)]
 	}
 
-	return os
+	return rs
 }
 
 func inTypes(ty string, ts []string) bool {

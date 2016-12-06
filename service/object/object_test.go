@@ -62,8 +62,40 @@ func TestAttachmentValidate(t *testing.T) {
 	}
 }
 
+func TestObjectMatchOpts(t *testing.T) {
+	var (
+		owned = true
+		o     = &Object{
+			Deleted: false,
+			Owned:   false,
+			Tags: []string{
+				"tag1",
+				"tag2",
+			},
+			Type: "foo",
+		}
+		cases = map[*QueryOptions]bool{
+			nil: true,
+			&QueryOptions{Deleted: true}:                  false,
+			&QueryOptions{Deleted: false}:                 true,
+			&QueryOptions{Owned: &owned}:                  false,
+			&QueryOptions{Tags: []string{"tag3", "tag4"}}: false,
+			&QueryOptions{Tags: []string{"tag1"}}:         true,
+			&QueryOptions{Tags: []string{"tag1", "tag2"}}: true,
+			&QueryOptions{Types: []string{"bar"}}:         false,
+			&QueryOptions{Types: []string{"foo"}}:         true,
+		}
+	)
+
+	for opts, want := range cases {
+		if have := o.MatchOpts(opts); have != want {
+			t.Errorf("have %v, want %v: %v", have, want, opts)
+		}
+	}
+}
+
 func TestObjectValidate(t *testing.T) {
-	for _, o := range []*Object{
+	cases := List{
 		// Too many Attachments
 		{
 			Attachments: []Attachment{
@@ -109,7 +141,9 @@ func TestObjectValidate(t *testing.T) {
 			Type:       "recipe",
 			Visibility: 50,
 		},
-	} {
+	}
+
+	for _, o := range cases {
 		if have, want := o.Validate(), ErrInvalidObject; !IsInvalidObject(have) {
 			t.Errorf("have %v, want %v", have, want)
 		}

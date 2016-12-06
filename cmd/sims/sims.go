@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/tapglue/snaas/service/rule"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	awsSession "github.com/aws/aws-sdk-go/aws/session"
@@ -194,6 +196,11 @@ func main() {
 	// TODO: Implement instrumentaiton middleware.
 	// TODO: Implement logging middleware.
 
+	var rules rule.Service
+	rules = rule.PostgresService(pgClient)
+	// TODO: Implement instrumentaiton middleware.
+	// TODO: Implement logging middleware.
+
 	var users user.Service
 	users = user.PostgresService(pgClient)
 	users = user.InstrumentMiddleware(
@@ -312,15 +319,8 @@ func main() {
 			core.AppFetch(apps),
 			conSource,
 			batchc,
-			conRuleFollower(
-				core.UserFetch(users),
-			),
-			conRuleFriendConfirmed(
-				core.UserFetch(users),
-			),
-			conRuleFriendRequest(
-				core.UserFetch(users),
-			),
+			core.PipelineConnection(users),
+			core.RuleListActive(rules),
 		)
 		if err != nil {
 			logger.Log("err", err, "lifecycle", "abort")
@@ -333,13 +333,8 @@ func main() {
 			core.AppFetch(apps),
 			eventSource,
 			batchc,
-			eventRuleLikeCreated(
-				core.ConnectionFollowerIDs(connections),
-				core.ConnectionFriendIDs(connections),
-				core.PostFetch(objects),
-				core.UserFetch(users),
-				core.UsersFetch(users),
-			),
+			core.PipelineEvent(objects, users),
+			core.RuleListActive(rules),
 		)
 		if err != nil {
 			logger.Log("err", err, "lifecycle", "abort")
@@ -352,19 +347,8 @@ func main() {
 			core.AppFetch(apps),
 			objectSource,
 			batchc,
-			objectRuleCommentCreated(
-				core.ConnectionFollowerIDs(connections),
-				core.ConnectionFriendIDs(connections),
-				core.PostFetch(objects),
-				core.UserFetch(users),
-				core.UsersFetch(users),
-			),
-			objectRulePostCreated(
-				core.ConnectionFollowerIDs(connections),
-				core.ConnectionFriendIDs(connections),
-				core.UserFetch(users),
-				core.UsersFetch(users),
-			),
+			core.PipelineObject(connections, objects, users),
+			core.RuleListActive(rules),
 		)
 		if err != nil {
 			logger.Log("err", err, "lifecycle", "abort")

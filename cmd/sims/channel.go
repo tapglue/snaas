@@ -7,7 +7,7 @@ import (
 	"github.com/tapglue/snaas/service/app"
 )
 
-type channelFunc func(*app.App, *message) error
+type channelFunc func(*app.App, *core.Message) error
 
 func channelPush(
 	deviceListUser core.DeviceListUserFunc,
@@ -15,8 +15,8 @@ func channelPush(
 	fetchActive core.PlatformFetchActiveFunc,
 	push sns.PushFunc,
 ) channelFunc {
-	return func(currentApp *app.App, msg *message) error {
-		ds, err := deviceListUser(currentApp, msg.recipient)
+	return func(currentApp *app.App, msg *core.Message) error {
+		ds, err := deviceListUser(currentApp, msg.Recipient)
 		if err != nil {
 			return err
 		}
@@ -38,7 +38,7 @@ func channelPush(
 				return err
 			}
 
-			err = push(d.Platform, d.EndpointARN, p.Scheme, msg.urn, msg.message)
+			err = push(d.Platform, d.EndpointARN, p.Scheme, msg.URN, msg.Message)
 			if err != nil {
 				if sns.IsDeliveryFailure(err) {
 					return nil

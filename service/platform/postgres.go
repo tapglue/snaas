@@ -2,7 +2,6 @@ package platform
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -86,12 +85,12 @@ func (s *pgService) Put(ns string, p *Platform) (*Platform, error) {
 }
 
 func (s *pgService) Query(ns string, opts QueryOptions) (List, error) {
-	clauses, params, err := convertOpts(opts)
+	where, params, err := convertOpts(opts)
 	if err != nil {
 		return nil, err
 	}
 
-	ps, err := s.listPlatforms(ns, clauses, params...)
+	ps, err := s.listPlatforms(ns, where, params...)
 	if err != nil {
 		if pg.IsRelationNotFound(pg.WrapError(err)) {
 			if err := s.Setup(ns); err != nil {
@@ -99,7 +98,7 @@ func (s *pgService) Query(ns string, opts QueryOptions) (List, error) {
 			}
 		}
 
-		ps, err = s.listPlatforms(ns, clauses, params...)
+		ps, err = s.listPlatforms(ns, where, params...)
 	}
 
 	return ps, err
@@ -187,22 +186,10 @@ func (s *pgService) insert(ns string, p *Platform) (*Platform, error) {
 }
 
 func (s *pgService) listPlatforms(
-	ns string,
-	clauses []string,
+	ns, where string,
 	params ...interface{},
 ) (List, error) {
-	c := strings.Join(clauses, "\nAND")
-
-	if len(clauses) > 0 {
-		c = fmt.Sprintf("WHERE %s", c)
-	}
-
-	query := strings.Join([]string{
-		fmt.Sprintf(pgListPlatforms, ns, c),
-		pgOrderCreatedAt,
-	}, "\n")
-
-	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	query := fmt.Sprintf(pgListPlatforms, ns, where)
 
 	rows, err := s.db.Query(query, params...)
 	if err != nil {
@@ -281,7 +268,7 @@ func (s *pgService) update(ns string, p *Platform) (*Platform, error) {
 	return p, err
 }
 
-func convertOpts(opts QueryOptions) ([]string, []interface{}, error) {
+func convertOpts(opts QueryOptions) (string, []interface{}, error) {
 	var (
 		clauses = []string{}
 		params  = []interface{}{}
@@ -290,7 +277,7 @@ func convertOpts(opts QueryOptions) ([]string, []interface{}, error) {
 	if opts.Active != nil {
 		clause, _, err := sqlx.In(pgClauseActive, []interface{}{*opts.Active})
 		if err != nil {
-			return nil, nil, err
+			return "", nil, err
 		}
 
 		clauses = append(clauses, clause)
@@ -306,7 +293,7 @@ func convertOpts(opts QueryOptions) ([]string, []interface{}, error) {
 
 		clause, _, err := sqlx.In(pgClauseAppIDs, ps)
 		if err != nil {
-			return nil, nil, err
+			return "", nil, err
 		}
 
 		clauses = append(clauses, clause)
@@ -322,7 +309,7 @@ func convertOpts(opts QueryOptions) ([]string, []interface{}, error) {
 
 		clause, _, err := sqlx.In(pgClauseARNs, ps)
 		if err != nil {
-			return nil, nil, err
+			return "", nil, err
 		}
 
 		clauses = append(clauses, clause)
@@ -332,7 +319,7 @@ func convertOpts(opts QueryOptions) ([]string, []interface{}, error) {
 	if opts.Deleted != nil {
 		clause, _, err := sqlx.In(pgClauseDeleted, []interface{}{*opts.Deleted})
 		if err != nil {
-			return nil, nil, err
+			return "", nil, err
 		}
 
 		clauses = append(clauses, clause)
@@ -348,7 +335,7 @@ func convertOpts(opts QueryOptions) ([]string, []interface{}, error) {
 
 		clause, _, err := sqlx.In(pgClauseEcosystems, ps)
 		if err != nil {
-			return nil, nil, err
+			return "", nil, err
 		}
 
 		clauses = append(clauses, clause)
@@ -364,12 +351,18 @@ func convertOpts(opts QueryOptions) ([]string, []interface{}, error) {
 
 		clause, _, err := sqlx.In(pgClauseIDs, ps)
 		if err != nil {
-			return nil, nil, err
+			return "", nil, err
 		}
 
 		clauses = append(clauses, clause)
 		params = append(params, ps...)
 	}
 
-	return clauses, params, nil
+	where := ""
+
+	if len(clauses) > 0 {
+		where = sqlx.Rebind(sqlx.DOLLAR, pg.ClausesToWhere(clauses...))
+	}
+
+	return where, params, nil
 }

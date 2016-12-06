@@ -6,12 +6,11 @@ import (
 	"flag"
 	"fmt"
 	"os/user"
-
-	"github.com/tapglue/snaas/platform/pg"
+	"testing"
 
 	"github.com/jmoiron/sqlx"
 
-	"testing"
+	"github.com/tapglue/snaas/platform/pg"
 )
 
 var pgTestURL string

@@ -113,11 +113,23 @@ func (c Contents) Validate() error {
 // List is an Object collection.
 type List []*Object
 
+func (l List) Len() int {
+	return len(l)
+}
+
+func (l List) Less(i, j int) bool {
+	return l[i].CreatedAt.After(l[j].CreatedAt)
+}
+
+func (l List) Swap(i, j int) {
+	l[i], l[j] = l[j], l[i]
+}
+
 // OwnerIDs returns all user ids of the associated object owners.
-func (os List) OwnerIDs() []uint64 {
+func (l List) OwnerIDs() []uint64 {
 	ids := []uint64{}
 
-	for _, o := range os {
+	for _, o := range l {
 		ids = append(ids, o.OwnerID)
 	}
 
@@ -147,6 +159,57 @@ type Object struct {
 	Type         string        `json:"type"`
 	UpdatedAt    time.Time     `json:"updated_at"`
 	Visibility   Visibility    `json:"visibility"`
+}
+
+// MatchOpts indicates if the Object matches the given QueryOptions.
+func (o *Object) MatchOpts(opts *QueryOptions) bool {
+	if opts == nil {
+		return true
+	}
+
+	if o.Deleted != opts.Deleted {
+		return false
+	}
+
+	if opts.Owned != nil && o.Owned != *opts.Owned {
+		return false
+	}
+
+	if len(opts.Tags) > 0 && len(o.Tags) == 0 {
+		return false
+	}
+
+	if len(opts.Tags) > 0 {
+		for _, t := range opts.Tags {
+			discard := true
+
+			for _, tag := range o.Tags {
+				if tag == t {
+					discard = false
+				}
+			}
+
+			if discard {
+				return false
+			}
+		}
+	}
+
+	if len(opts.Types) > 0 {
+		discard := true
+
+		for _, t := range opts.Types {
+			if o.Type == t {
+				discard = false
+			}
+		}
+
+		if discard {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Validate returns an error if a constraint on the Object is not full-filled.
@@ -211,17 +274,17 @@ type Producer interface {
 
 // QueryOptions are passed to narrow down query for objects.
 type QueryOptions struct {
-	Before       time.Time
-	Deleted      bool
-	ExternalIDs  []string
-	ID           *uint64
-	Limit        int
-	ObjectIDs    []uint64
-	OwnerIDs     []uint64
-	Owned        *bool
-	Tags         []string
-	Types        []string
-	Visibilities []Visibility
+	Before       time.Time    `json:"-"`
+	Deleted      bool         `json:"deleted,omitempty"`
+	ExternalIDs  []string     `json:"-"`
+	ID           *uint64      `json:"id,omitempty"`
+	Limit        int          `json:"-"`
+	ObjectIDs    []uint64     `json:"object_ids,omitempty"`
+	OwnerIDs     []uint64     `json:"owner_ids,omitempty"`
+	Owned        *bool        `json:"owned,omitempty"`
+	Tags         []string     `json:"tags,omitempty"`
+	Types        []string     `json:"types,omitempty"`
+	Visibilities []Visibility `json:"visibilities,omitempty"`
 }
 
 // Restrictions is the composite to regulate common interactions on Posts.
