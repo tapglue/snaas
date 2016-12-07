@@ -259,7 +259,7 @@ func PipelineObject(
 			}
 
 			for _, recipient := range r.Recipients {
-				rs, err := objectRecipients(
+				rs, err := recipientsObject(
 					connections,
 					objects,
 					users,
@@ -286,6 +286,26 @@ func PipelineObject(
 
 		return ms, nil
 	}
+}
+
+type contextConnection struct {
+	Conenction *connection.Connection
+	From       *user.User
+	To         *user.User
+}
+
+type contextEvent struct {
+	Event       *event.Event
+	Owner       *user.User
+	Parent      *object.Object
+	ParentOwner *user.User
+}
+
+type contextObject struct {
+	Object      *object.Object
+	Owner       *user.User
+	Parent      *object.Object
+	ParentOwner *user.User
 }
 
 func compileTemplate(context interface{}, t string) (string, error) {
@@ -341,57 +361,6 @@ func objectFetch(objects object.Service) objectFetchFunc {
 		}
 
 		return os[0], nil
-	}
-}
-
-type objectRecipientsFunc func(*app.App, *contextObject, rule.Query) (user.List, error)
-
-func objectRecipients(
-	connections connection.Service,
-	objects object.Service,
-	users user.Service,
-) objectRecipientsFunc {
-	return func(
-		currentApp *app.App,
-		context *contextObject,
-		q rule.Query,
-	) (user.List, error) {
-		ids := []uint64{}
-
-		for condType, condTemplate := range q {
-			switch condType {
-			case queryCondObjectOwner:
-				opts, err := queryOptsFromTemplate(context, condTemplate)
-				if err != nil {
-					return nil, err
-				}
-
-				ownerIDs, err := ownerIDsFetch(objects, currentApp.Namespace(), opts)
-				if err != nil {
-					return nil, err
-				}
-
-				ids = append(ids, ownerIDs...)
-			case queryCondOwnerFriends:
-				friendIDs, err := ConnectionFriendIDs(connections)(currentApp, context.Owner.ID)
-				if err != nil {
-					return nil, err
-				}
-
-				ids = append(ids, friendIDs...)
-			case queryCondOwner:
-				ids = append(ids, context.ParentOwner.ID)
-			}
-		}
-
-		ids = filterIDs(ids, context.Owner.ID)
-
-		us, err := user.ListFromIDs(users, currentApp.Namespace(), ids...)
-		if err != nil {
-			return nil, err
-		}
-
-		return us, nil
 	}
 }
 
@@ -477,7 +446,9 @@ func recipientsEvent() recipientsEventFunc {
 		for condType := range q {
 			switch condType {
 			case queryCondParentOwner:
-				us = append(us, context.ParentOwner)
+				if context.Owner.ID != context.ParentOwner.ID {
+					us = append(us, context.ParentOwner)
+				}
 			}
 		}
 
@@ -485,22 +456,57 @@ func recipientsEvent() recipientsEventFunc {
 	}
 }
 
-type contextConnection struct {
-	Conenction *connection.Connection
-	From       *user.User
-	To         *user.User
-}
+type recipientsObjectFunc func(*app.App, *contextObject, rule.Query) (user.List, error)
 
-type contextEvent struct {
-	Event       *event.Event
-	Owner       *user.User
-	Parent      *object.Object
-	ParentOwner *user.User
-}
+func recipientsObject(
+	connections connection.Service,
+	objects object.Service,
+	users user.Service,
+) recipientsObjectFunc {
+	return func(
+		currentApp *app.App,
+		context *contextObject,
+		q rule.Query,
+	) (user.List, error) {
+		ids := []uint64{}
 
-type contextObject struct {
-	Object      *object.Object
-	Owner       *user.User
-	Parent      *object.Object
-	ParentOwner *user.User
+		for condType, condTemplate := range q {
+			switch condType {
+			case queryCondObjectOwner:
+				opts, err := queryOptsFromTemplate(context, condTemplate)
+				if err != nil {
+					return nil, err
+				}
+
+				ownerIDs, err := ownerIDsFetch(objects, currentApp.Namespace(), opts)
+				if err != nil {
+					return nil, err
+				}
+
+				oIDs := filterIDs(ownerIDs, context.Owner.ID, context.ParentOwner.ID)
+
+				ids = append(ids, oIDs...)
+			case queryCondOwnerFriends:
+				friendIDs, err := ConnectionFriendIDs(connections)(currentApp, context.Owner.ID)
+				if err != nil {
+					return nil, err
+				}
+
+				ids = append(ids, friendIDs...)
+			case queryCondOwner:
+				ids = append(ids, context.Owner.ID)
+			case queryCondParentOwner:
+				if context.Owner.ID != context.ParentOwner.ID {
+					ids = append(ids, context.ParentOwner.ID)
+				}
+			}
+		}
+
+		us, err := user.ListFromIDs(users, currentApp.Namespace(), ids...)
+		if err != nil {
+			return nil, err
+		}
+
+		return us, nil
+	}
 }

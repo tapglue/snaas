@@ -536,7 +536,7 @@ func TestPipelineObjectCondOwner(t *testing.T) {
 		Recipients: rule.Recipients{
 			{
 				Query: map[string]string{
-					"owner": "",
+					"parentOwner": "",
 				},
 				Templates: map[string]string{
 					"en": "{{.Owner.Username}} commented on your post",
