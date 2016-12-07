@@ -169,6 +169,17 @@ resource "aws_iam_user_policy" "state-change-sr" {
         "sqs:SendMessage"
       ],
       "Resource":"arn:aws:sqs:*:${var.account}:*-state-change"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "sns:CreatePlatformApplication",
+          "sns:CreatePlatformEndpoint",
+          "sns:GetEndpointAttributes",
+          "sns:Publish",
+          "sns:SetEndpointAttributes"
+        ],
+        "Resource": "arn:aws:sns:*:${var.account}:*"
       }
    ]
 }
