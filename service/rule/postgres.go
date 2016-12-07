@@ -32,7 +32,7 @@ const (
 	pgCreateTable  = `CREATE TABLE IF NOT EXISTS %s.rules(
 		active BOOL DEFAULT false,
 		criteria JSONB NOT NULL,
-		deleted bool DEFAULT false,
+		deleted BOOL DEFAULT false,
 		ecosystem INT,
 		id BIGINT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
