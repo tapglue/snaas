@@ -33,6 +33,10 @@ func (c *CriteriaConnection) Match(i interface{}) bool {
 		return false
 	}
 
+	if s.Old == nil {
+		return s.New.MatchOpts(c.New)
+	}
+
 	return s.New.MatchOpts(c.New) && s.Old.MatchOpts(c.Old)
 }
 
@@ -51,6 +55,10 @@ func (c *CriteriaEvent) Match(i interface{}) bool {
 		return false
 	}
 
+	if s.Old == nil {
+		return s.New.MatchOpts(c.New)
+	}
+
 	return s.New.MatchOpts(c.New) && s.Old.MatchOpts(c.Old)
 }
 
@@ -67,6 +75,10 @@ func (c *CriteriaObject) Match(i interface{}) bool {
 
 	if s.New == nil && s.Old == nil {
 		return false
+	}
+
+	if s.Old == nil {
+		return s.New.MatchOpts(c.New)
 	}
 
 	return s.New.MatchOpts(c.New) && s.Old.MatchOpts(c.Old)
