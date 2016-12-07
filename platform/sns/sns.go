@@ -240,6 +240,8 @@ func Push(api API) PushFunc {
 					return ErrDeliveryFailure
 				}
 			}
+
+			return err
 		}
 
 		return nil
