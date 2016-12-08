@@ -43,7 +43,7 @@ const (
 	fmtURN         = `%s://%s`
 	msgAPNS        = `{"APNS": "{\"aps\": {\"alert\": \"%s\"}, \"urn\":\"%s\"}" }`
 	msgAPNSSandbox = `{"APNS_SANDBOX": "{\"aps\": {\"alert\": \"%s\"}, \"urn\":\"%s\"}" }`
-	msgGCM         = `{"GCM": "{\"notification\": {\"title\": \"%s\", \"data\": {\"urn\": \"%s\"}} }"}`
+	msgGCM         = `{"GCM": "{\"data\": {\"title\": \"Social\", \"body\": \"%s\", \"urn\": \"%s\"} }" }`
 )
 
 // PlatformIdentifiers helps to map Platfrom to human-readable strings.
