@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/tapglue/snaas/core"
-	pErr "github.com/tapglue/snaas/error"
+	serr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/sns"
 	"github.com/tapglue/snaas/service/app"
 )
@@ -27,14 +27,19 @@ func channelPush(
 		for _, d := range ds {
 			p, err := fetchActive(currentApp, d.Platform)
 			if err != nil {
-				if pErr.IsNotFound(err) {
+				if serr.IsNotFound(err) {
 					continue
 				}
+
 				return err
 			}
 
 			d, err = deviceSync(currentApp, p.ARN, d)
 			if err != nil {
+				if serr.IsDeviceDisabled(err) {
+					continue
+				}
+
 				return err
 			}
 

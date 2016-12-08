@@ -14,6 +14,7 @@ var (
 
 // Platform errors.
 var (
+	ErrDeviceDisabled  = errors.New("device disabled")
 	ErrInvalidPlatform = errors.New("invalid platform")
 )
 
@@ -25,6 +26,11 @@ type Error struct {
 
 func (e Error) Error() string {
 	return e.msg
+}
+
+// IsDeviceDisabled indicates if err is ErrDeviceDisabled.
+func IsDeviceDisabled(err error) bool {
+	return unwrapError(err) == ErrDeviceDisabled
 }
 
 // IsInvalidPlatform indicates if err is ErrInvalidPlatform.

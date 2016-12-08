@@ -1,6 +1,7 @@
 package core
 
 import (
+	serr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/sns"
 	"github.com/tapglue/snaas/service/app"
 	"github.com/tapglue/snaas/service/device"
@@ -107,8 +108,8 @@ type DeviceSyncEndpointFunc func(
 	input *device.Device,
 ) (*device.Device, error)
 
-// DeviceSyncEndpointFunc assures symmetry between the representation of the
-// Device in the device.Service and SNS Platform Application.
+// DeviceSyncEndpoint assures symmetry between the representation of the Device
+// in the device.Service and SNS Platform Application.
 // * create endpoint if not present
 // * sync tokens if different
 func DeviceSyncEndpoint(
@@ -135,8 +136,22 @@ func DeviceSyncEndpoint(
 		}
 
 		e, err := endpointRetrieve(input.EndpointARN)
-		if err != nil && !sns.IsEndpointNotFound(err) {
+		if err != nil && !sns.IsEndpointDisabled(err) &&
+			!sns.IsEndpointNotFound(err) {
 			return nil, err
+		}
+
+		// If the Endpoint is disabled we disable the device and return an
+		// appropriate error.
+		if sns.IsEndpointDisabled(err) {
+			input.Disabled = true
+
+			_, err := devices.Put(currentApp.Namespace(), input)
+			if err != nil {
+				return nil, err
+			}
+
+			return nil, serr.Wrap(serr.ErrDeviceDisabled, "%d", input.ID)
 		}
 
 		// If the Endpoint is gone we create a new one.
