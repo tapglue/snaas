@@ -88,91 +88,26 @@ func testServiceQuery(t *testing.T, p prepareFunc) {
 		}
 	}
 
-	ds, err = service.Query(namespace, QueryOptions{
-		Deleted: &deleted,
-	})
-	if err != nil {
-		t.Fatal(err)
+	cases := map[*QueryOptions]int{
+		&QueryOptions{Deleted: &deleted}:                             5,
+		&QueryOptions{DeviceIDs: []string{created.DeviceID}}:         1,
+		&QueryOptions{Disabled: &deleted}:                            7,
+		&QueryOptions{EndpointARNs: []string{created.EndpointARN}}:   1,
+		&QueryOptions{IDs: []uint64{created.ID}}:                     1,
+		&QueryOptions{Platforms: []sns.Platform{PlatformIOSSandbox}}: 13,
+		&QueryOptions{Tokens: []string{created.Token}}:               1,
+		&QueryOptions{UserIDs: []uint64{created.UserID}}:             1,
 	}
 
-	if have, want := len(ds), 5; have != want {
-		t.Errorf("have %v, want %v", have, want)
-	}
+	for opts, want := range cases {
+		list, err := service.Query(namespace, *opts)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	ds, err = service.Query(namespace, QueryOptions{
-		DeviceIDs: []string{
-			created.DeviceID,
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(ds), 1; have != want {
-		t.Errorf("have %v, want %v", have, want)
-	}
-
-	ds, err = service.Query(namespace, QueryOptions{
-		Disabled: &deleted,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(ds), 7; have != want {
-		t.Errorf("have %v, want %v", have, want)
-	}
-
-	ds, err = service.Query(namespace, QueryOptions{
-		EndpointARNs: []string{
-			created.EndpointARN,
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(ds), 1; have != want {
-		t.Errorf("have %v, want %v", have, want)
-	}
-
-	ds, err = service.Query(namespace, QueryOptions{
-		IDs: []uint64{
-			created.ID,
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(ds), 1; have != want {
-		t.Errorf("have %v, want %v", have, want)
-	}
-
-	ds, err = service.Query(namespace, QueryOptions{
-		Platforms: []sns.Platform{
-			PlatformIOSSandbox,
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(ds), 13; have != want {
-		t.Errorf("have %v, want %v", have, want)
-	}
-
-	ds, err = service.Query(namespace, QueryOptions{
-		UserIDs: []uint64{
-			created.UserID,
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(ds), 1; have != want {
-		t.Errorf("have %v, want %v", have, want)
+		if have := len(list); have != want {
+			t.Errorf("have %v, want %v", have, want)
+		}
 	}
 }
 
