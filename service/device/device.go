@@ -77,6 +77,7 @@ type QueryOptions struct {
 	EndpointARNs []string
 	IDs          []uint64
 	Platforms    []sns.Platform
+	Tokens       []string
 	UserIDs      []uint64
 }
 

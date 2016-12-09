@@ -42,6 +42,7 @@ const (
 	pgClauseEndpointARNs = `endpoint_arn IN (?)`
 	pgClauseIDs          = `id IN (?)`
 	pgClausePlatforms    = `platform IN (?)`
+	pgClauseTokens       = `token IN (?)`
 	pgClauseUserIDs      = `user_id IN (?)`
 
 	pgOrderCreatedAt = `ORDER BY created_at DESC`
@@ -374,6 +375,22 @@ func convertOpts(opts QueryOptions) ([]string, []interface{}, error) {
 		}
 
 		clause, _, err := sqlx.In(pgClausePlatforms, ps)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		clauses = append(clauses, clause)
+		params = append(params, ps...)
+	}
+
+	if len(opts.Tokens) > 0 {
+		ps := []interface{}{}
+
+		for _, p := range opts.Tokens {
+			ps = append(ps, p)
+		}
+
+		clause, _, err := sqlx.In(pgClauseTokens, ps)
 		if err != nil {
 			return nil, nil, err
 		}
