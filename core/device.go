@@ -198,6 +198,7 @@ func DeviceUpdate(devices device.Service) DeviceUpdateFunc {
 		token string,
 		language string,
 	) error {
+		// Get user devices.
 		ds, err := devices.Query(currentApp.Namespace(), device.QueryOptions{
 			Deleted: &defaultDeleted,
 			Platforms: []sns.Platform{
@@ -210,6 +211,19 @@ func DeviceUpdate(devices device.Service) DeviceUpdateFunc {
 		if err != nil {
 			return err
 		}
+
+		// Check if there is a device with that token.
+		ts, err := devices.Query(currentApp.Namespace(), device.QueryOptions{
+			Deleted: &defaultDeleted,
+			Tokens: []string{
+				token,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		ds = append(ds, ts...)
 
 		d := &device.Device{}
 
