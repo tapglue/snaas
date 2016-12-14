@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/tapglue/snaas/service/reaction"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	awsSession "github.com/aws/aws-sdk-go/aws/session"
@@ -354,6 +356,17 @@ func main() {
 	// TODO: Implement write path to avoid stale counts.
 	// objects = object.CacheServiceMiddleware(objectCountsCache)(objects)
 
+	var reactions reaction.Service
+	reactions = reaction.PostgresService(pgClient)
+	reactions = reaction.InstrumentServiceMiddleware(
+		component,
+		storeService,
+		serviceErrCount,
+		serviceOpCount,
+		serviceOpLatency,
+	)(reactions)
+	reactions = reaction.LogServiceMiddleware(logger, storeService)(reactions)
+
 	var sessions session.Service
 	sessions = session.PostgresService(pgClient)
 	sessions = session.InstrumentMiddleware(
@@ -525,7 +538,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.FeedNews(
-				core.FeedNews(connections, events, objects, users),
+				core.FeedNews(connections, events, objects, reactions, users),
 			),
 		),
 	)
@@ -534,7 +547,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.FeedEvents(
-				core.FeedEvents(connections, events, objects, users),
+				core.FeedEvents(connections, events, objects, reactions, users),
 			),
 		),
 	)
@@ -543,7 +556,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.FeedNotificationsSelf(
-				core.FeedNotificationsSelf(connections, events, objects, users),
+				core.FeedNotificationsSelf(connections, events, objects, reactions, users),
 			),
 		),
 	)
@@ -552,7 +565,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.FeedPosts(
-				core.FeedPosts(connections, events, objects, users),
+				core.FeedPosts(connections, events, objects, reactions, users),
 			),
 		),
 	)
@@ -580,7 +593,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.PostRetrieve(
-				core.PostRetrieve(connections, events, objects),
+				core.PostRetrieve(connections, events, objects, reactions),
 			),
 		),
 	)
@@ -598,7 +611,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.PostListAll(
-				core.PostListAll(connections, events, objects, users),
+				core.PostListAll(connections, events, objects, reactions, users),
 			),
 		),
 	)
@@ -607,7 +620,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.PostListMe(
-				core.PostListUser(connections, events, objects, users),
+				core.PostListUser(connections, events, objects, reactions, users),
 			),
 		),
 	)
@@ -616,7 +629,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.PostList(
-				core.PostListUser(connections, events, objects, users),
+				core.PostListUser(connections, events, objects, reactions, users),
 			),
 		),
 	)
@@ -699,7 +712,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.LikesMe(
-				core.LikesUser(connections, events, objects, users),
+				core.LikesUser(connections, events, objects, reactions, users),
 			),
 		),
 	)
@@ -708,7 +721,44 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.LikesUser(
-				core.LikesUser(connections, events, objects, users),
+				core.LikesUser(connections, events, objects, reactions, users),
+			),
+		),
+	)
+
+	// Reaction routes.
+	current.Methods("DELETE").Path("/posts/{postID:[0-9]+}/reactions/{reactionType:[a-z]+}").Name("reactionDelete").HandlerFunc(
+		handler.Wrap(
+			withUser,
+			handler.ReactionDelete(
+				core.ReactionDelete(connections, objects, reactions),
+			),
+		),
+	)
+
+	current.Methods("POST").Path("/posts/{postID:[0-9]+}/reactions/{reactionType:[a-z]+}").Name("reactionCreate").HandlerFunc(
+		handler.Wrap(
+			withUser,
+			handler.ReactionCreate(
+				core.ReactionCreate(connections, objects, reactions),
+			),
+		),
+	)
+
+	current.Methods("GET").Path("/posts/{postID:[0-9]+}/reactions/{reactionType:[a-z]+}").Name("reactionListPostByType").HandlerFunc(
+		handler.Wrap(
+			withUser,
+			handler.ReactionListPostByType(
+				core.ReactionListPost(connections, events, objects, reactions, users),
+			),
+		),
+	)
+
+	current.Methods("GET").Path("/posts/{postID:[0-9]+}/reactions").Name("reactionListPost").HandlerFunc(
+		handler.Wrap(
+			withUser,
+			handler.ReactionListPost(
+				core.ReactionListPost(connections, events, objects, reactions, users),
 			),
 		),
 	)

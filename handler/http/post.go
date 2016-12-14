@@ -366,6 +366,14 @@ func (p *payloadPost) MarshalJSON() ([]byte, error) {
 		Counts: postCounts{
 			Comments: p.post.Counts.Comments,
 			Likes:    p.post.Counts.Likes,
+			Reactions: reactionCounts{
+				Angry: p.post.Counts.ReactionCounts.Angry,
+				Haha:  p.post.Counts.ReactionCounts.Haha,
+				Like:  p.post.Counts.ReactionCounts.Like,
+				Love:  p.post.Counts.ReactionCounts.Love,
+				Sad:   p.post.Counts.ReactionCounts.Sad,
+				Wow:   p.post.Counts.ReactionCounts.Wow,
+			},
 		},
 		CreatedAt:    p.post.CreatedAt,
 		ID:           strconv.FormatUint(p.post.ID, 10),
@@ -435,8 +443,18 @@ func (p *payloadPosts) MarshalJSON() ([]byte, error) {
 }
 
 type postCounts struct {
-	Comments int `json:"comments"`
-	Likes    int `json:"likes"`
+	Comments  int            `json:"comments"`
+	Likes     int            `json:"likes"`
+	Reactions reactionCounts `json:"reactions"`
+}
+
+type reactionCounts struct {
+	Angry uint `json:"angry"`
+	Haha  uint `json:"haha"`
+	Like  uint `json:"like"`
+	Love  uint `json:"love"`
+	Sad   uint `json:"sad"`
+	Wow   uint `json:"wow"`
 }
 
 type postFields struct {
