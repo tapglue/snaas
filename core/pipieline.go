@@ -246,7 +246,14 @@ func PipelineObject(
 			}
 		}
 
+		am := map[string]object.Contents{}
+
+		for _, a := range change.New.Attachments {
+			am[a.Name] = a.Contents
+		}
+
 		context = &contextObject{
+			Attachments: am,
 			Object:      change.New,
 			Owner:       owner,
 			Parent:      parent,
@@ -302,6 +309,7 @@ type contextEvent struct {
 }
 
 type contextObject struct {
+	Attachments map[string]object.Contents
 	Object      *object.Object
 	Owner       *user.User
 	Parent      *object.Object
