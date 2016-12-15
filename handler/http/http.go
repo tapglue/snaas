@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/tapglue/snaas/core"
+	serr "github.com/tapglue/snaas/error"
 )
 
 const pgHealthcheck = `SELECT 1`
@@ -114,6 +115,9 @@ func respondError(w http.ResponseWriter, code int, err error) {
 		code = http.StatusNotFound
 		statusCode = http.StatusNotFound
 	case core.ErrUnauthorized:
+		statusCode = http.StatusUnauthorized
+	case serr.ErrUserExists:
+		code = 4001
 		statusCode = http.StatusUnauthorized
 	}
 

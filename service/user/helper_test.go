@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	serr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/generate"
 )
 
@@ -272,7 +273,7 @@ func testServicePutEmailUnique(t *testing.T, p prepareFunc) {
 	second.Email = mixedCase
 
 	_, err = service.Put(namespace, second)
-	if have, want := err, ErrNotUnique; !IsNotUnique(err) {
+	if have, want := err, serr.ErrUserExists; !serr.IsUserExists(err) {
 		t.Errorf("have %v, want %v\n%#v", have, want, err)
 	}
 }
@@ -350,7 +351,7 @@ func testServicePutUsernameUnique(t *testing.T, p prepareFunc) {
 	second.Username = mixedCase
 
 	_, err = service.Put(namespace, second)
-	if have, want := err, ErrNotUnique; !IsNotUnique(err) {
+	if have, want := err, serr.ErrUserExists; !serr.IsUserExists(err) {
 		t.Errorf("have %v, want %v\n%#v", have, want, err)
 	}
 }

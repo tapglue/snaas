@@ -8,6 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
+	serr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/flake"
 	"github.com/tapglue/snaas/platform/pg"
 )
@@ -186,7 +187,7 @@ func (s *pgService) Put(ns string, user *User) (*User, error) {
 		}
 
 		if pg.IsNotUnique(pg.WrapError(err)) {
-			return nil, ErrNotUnique
+			return nil, serr.ErrUserExists
 		}
 	}
 

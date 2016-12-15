@@ -11,7 +11,6 @@ const errFmt = "%s: %s"
 var (
 	ErrInvalidUser = errors.New("invalid user")
 	ErrNotFound    = errors.New("user not found")
-	ErrNotUnique   = errors.New("user information are not unique")
 )
 
 // Error wraps common User errors.
@@ -32,10 +31,6 @@ func IsInvalidUser(err error) bool {
 // IsNotFound indicates if err is ErrNotFound.
 func IsNotFound(err error) bool {
 	return unwrapError(err) == ErrNotFound
-}
-
-func IsNotUnique(err error) bool {
-	return unwrapError(err) == ErrNotUnique
 }
 
 func unwrapError(err error) error {
