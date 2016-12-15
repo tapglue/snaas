@@ -15,6 +15,7 @@ import (
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/user"
 )
 
@@ -28,6 +29,7 @@ const (
 	keyCursorBefore = "before"
 	keyLimit        = "limit"
 	keyPostID       = "postID"
+	keyReactionType = "reactionType"
 	keyState        = "state"
 	keyUserID       = "userID"
 	keyUserQuery    = "q"
@@ -256,6 +258,22 @@ func extractLimit(r *http.Request) (int, error) {
 	return limit, nil
 }
 
+func extractReactionType(r *http.Request) (reaction.Type, error) {
+	t, ok := map[string]reaction.Type{
+		"likes":   reaction.TypeLike,
+		"loves":   reaction.TypeLove,
+		"hahas":   reaction.TypeHaha,
+		"wows":    reaction.TypeWow,
+		"sads":    reaction.TypeSad,
+		"angries": reaction.TypeAngry,
+	}[mux.Vars(r)[keyReactionType]]
+	if !ok {
+		return 0, fmt.Errorf("reaction type not supported")
+	}
+
+	return t, nil
+}
+
 func extractPostID(r *http.Request) (uint64, error) {
 	return strconv.ParseUint(mux.Vars(r)[keyPostID], 10, 64)
 }
@@ -283,6 +301,10 @@ func extractPostOpts(r *http.Request) (object.QueryOptions, error) {
 	}
 
 	return opts, nil
+}
+
+func extractReactionOpts(r *http.Request) (reaction.QueryOptions, error) {
+	return reaction.QueryOptions{}, nil
 }
 
 func extractState(r *http.Request) connection.State {

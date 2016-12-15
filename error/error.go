@@ -14,8 +14,10 @@ var (
 
 // Platform errors.
 var (
-	ErrDeviceDisabled  = errors.New("device disabled")
-	ErrInvalidPlatform = errors.New("invalid platform")
+	ErrDeviceDisabled   = errors.New("device disabled")
+	ErrInvalidPlatform  = errors.New("invalid platform")
+	ErrInvalidReaction  = errors.New("invalid reaction")
+	ErrReactionNotFound = errors.New("reaction not found")
 )
 
 // Error wrapper.
@@ -36,6 +38,16 @@ func IsDeviceDisabled(err error) bool {
 // IsInvalidPlatform indicates if err is ErrInvalidPlatform.
 func IsInvalidPlatform(err error) bool {
 	return unwrapError(err) == ErrInvalidPlatform
+}
+
+// IsInvalidReaction indicates if err is ErrInvalidReaction.
+func IsInvalidReaction(err error) bool {
+	return unwrapError(err) == ErrInvalidReaction
+}
+
+// IsReactionNotFound indicates if err is ErrReactionNotFound.
+func IsReactionNotFound(err error) bool {
+	return unwrapError(err) == ErrReactionNotFound
 }
 
 // IsNotFound indicates if err is ErrNotFouund.

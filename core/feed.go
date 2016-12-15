@@ -9,6 +9,7 @@ import (
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/user"
 )
 
@@ -199,6 +200,7 @@ func FeedEvents(
 	connections connection.Service,
 	events event.Service,
 	objects object.Service,
+	reactions reaction.Service,
 	users user.Service,
 ) FeedEventsFunc {
 	return func(
@@ -254,7 +256,7 @@ func FeedEvents(
 			return nil, err
 		}
 
-		err = enrichCounts(events, objects, currentApp, ps)
+		err = enrichCounts(events, objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -318,6 +320,7 @@ func FeedNews(
 	connections connection.Service,
 	events event.Service,
 	objects object.Service,
+	reactions reaction.Service,
 	users user.Service,
 ) FeedNewsFunc {
 	return func(
@@ -374,7 +377,7 @@ func FeedNews(
 			return nil, err
 		}
 
-		err = enrichCounts(events, objects, currentApp, ps)
+		err = enrichCounts(events, objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -431,7 +434,7 @@ func FeedNews(
 			return nil, err
 		}
 
-		err = enrichCounts(events, objects, currentApp, ps)
+		err = enrichCounts(events, objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -471,6 +474,7 @@ func FeedNotificationsSelf(
 	connections connection.Service,
 	events event.Service,
 	objects object.Service,
+	reactions reaction.Service,
 	users user.Service,
 ) FeedNotificationsSelfFunc {
 	return func(
@@ -519,7 +523,7 @@ func FeedNotificationsSelf(
 			return nil, err
 		}
 
-		err = enrichCounts(events, objects, currentApp, ps)
+		err = enrichCounts(events, objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -552,6 +556,7 @@ func FeedPosts(
 	connections connection.Service,
 	events event.Service,
 	objects object.Service,
+	reactions reaction.Service,
 	users user.Service,
 ) FeedPostsFunc {
 	return func(
@@ -599,7 +604,7 @@ func FeedPosts(
 			return nil, err
 		}
 
-		err = enrichCounts(events, objects, currentApp, ps)
+		err = enrichCounts(events, objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}

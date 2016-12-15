@@ -52,12 +52,19 @@ func ClausesToWhere(clauses ...string) string {
 }
 
 // GuardIndex wraps an index creation query with a condition to prevent conflicts.
-func GuardIndex(namespace, index, query string) string {
+func GuardIndex(namespace, index, query string, args ...interface{}) string {
+	as := []interface{}{
+		index,
+		namespace,
+	}
+
+	as = append(as, args...)
+
 	return fmt.Sprintf(
 		guardIndex,
 		namespace,
 		index,
-		fmt.Sprintf(query, index, namespace),
+		fmt.Sprintf(query, as...),
 	)
 }
 

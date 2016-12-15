@@ -5,6 +5,7 @@ import (
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/user"
 )
 
@@ -23,8 +24,9 @@ type Post struct {
 
 // PostCounts bundles all connected entity counts.
 type PostCounts struct {
-	Comments int
-	Likes    int
+	Comments       int
+	Likes          int
+	ReactionCounts ReactionCounts
 }
 
 // PostFeed is the composite answer for post list methods.
@@ -224,6 +226,7 @@ func PostListAll(
 	connections connection.Service,
 	events event.Service,
 	objects object.Service,
+	reactions reaction.Service,
 	users user.Service,
 ) PostListAllFunc {
 	return func(
@@ -245,7 +248,7 @@ func PostListAll(
 
 		ps := postsFromObjects(os)
 
-		err = enrichCounts(events, objects, currentApp, ps)
+		err = enrichCounts(events, objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -289,6 +292,7 @@ func PostListUser(
 	connections connection.Service,
 	events event.Service,
 	objects object.Service,
+	reactions reaction.Service,
 	users user.Service,
 ) PostListUserFunc {
 	return func(
@@ -331,7 +335,7 @@ func PostListUser(
 
 		ps := postsFromObjects(os)
 
-		err = enrichCounts(events, objects, currentApp, ps)
+		err = enrichCounts(events, objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -372,6 +376,7 @@ func PostRetrieve(
 	connections connection.Service,
 	events event.Service,
 	objects object.Service,
+	reactions reaction.Service,
 ) PostRetrieveFunc {
 	return func(
 		currentApp *app.App,
@@ -399,7 +404,7 @@ func PostRetrieve(
 
 		post := &Post{Object: os[0]}
 
-		err = enrichCounts(events, objects, currentApp, PostList{post})
+		err = enrichCounts(events, objects, reactions, currentApp, PostList{post})
 		if err != nil {
 			return nil, err
 		}
@@ -515,6 +520,7 @@ func constrainPostVisibility(origin Origin, visibility object.Visibility) error 
 func enrichCounts(
 	events event.Service,
 	objects object.Service,
+	reactions reaction.Service,
 	currentApp *app.App,
 	ps PostList,
 ) error {
@@ -544,9 +550,90 @@ func enrichCounts(
 			return err
 		}
 
+		reactionCounts := ReactionCounts{}
+
+		reactionCounts.Angry, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
+			Deleted: &defaultDeleted,
+			ObjectIDs: []uint64{
+				p.ID,
+			},
+			Types: []reaction.Type{
+				reaction.TypeAngry,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		reactionCounts.Haha, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
+			Deleted: &defaultDeleted,
+			ObjectIDs: []uint64{
+				p.ID,
+			},
+			Types: []reaction.Type{
+				reaction.TypeHaha,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		reactionCounts.Like, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
+			Deleted: &defaultDeleted,
+			ObjectIDs: []uint64{
+				p.ID,
+			},
+			Types: []reaction.Type{
+				reaction.TypeLike,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		reactionCounts.Love, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
+			Deleted: &defaultDeleted,
+			ObjectIDs: []uint64{
+				p.ID,
+			},
+			Types: []reaction.Type{
+				reaction.TypeLove,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		reactionCounts.Sad, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
+			Deleted: &defaultDeleted,
+			ObjectIDs: []uint64{
+				p.ID,
+			},
+			Types: []reaction.Type{
+				reaction.TypeSad,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		reactionCounts.Wow, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
+			Deleted: &defaultDeleted,
+			ObjectIDs: []uint64{
+				p.ID,
+			},
+			Types: []reaction.Type{
+				reaction.TypeWow,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
 		p.Counts = PostCounts{
-			Comments: comments,
-			Likes:    likes,
+			Comments:       comments,
+			Likes:          likes,
+			ReactionCounts: reactionCounts,
 		}
 	}
 

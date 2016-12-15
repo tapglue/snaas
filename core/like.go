@@ -7,6 +7,7 @@ import (
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/user"
 )
 
@@ -24,7 +25,7 @@ type LikeFeed struct {
 	UserMap user.Map
 }
 
-// LikeCreate checks if a like for the owner on the post exists and if not
+// LikeCreateFunc checks if a like for the owner on the post exists and if not
 // creates a new event for it.
 type LikeCreateFunc func(
 	currentApp *app.App,
@@ -32,7 +33,7 @@ type LikeCreateFunc func(
 	postID uint64,
 ) (*event.Event, error)
 
-// Create checks if a like for the owner on the post exists and if not creates
+// LikeCreate checks if a like for the owner on the post exists and if not creates
 // a new event for it.
 func LikeCreate(
 	connections connection.Service,
@@ -268,6 +269,7 @@ func LikesUser(
 	connections connection.Service,
 	events event.Service,
 	objects object.Service,
+	reactions reaction.Service,
 	users user.Service,
 ) LikesUserFunc {
 	return func(
@@ -306,7 +308,7 @@ func LikesUser(
 
 		ps = postsForLikes(ls, ps.toMap())
 
-		err = enrichCounts(events, objects, currentApp, ps)
+		err = enrichCounts(events, objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
