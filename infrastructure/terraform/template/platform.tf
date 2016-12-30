@@ -6,6 +6,31 @@ data "aws_acm_certificate" "perimeter" {
   ]
 }
 
+data "template_file" "domain_canonical" {
+  template = "$${root}.$${tld}"
+
+  vars {
+    root = "${element(split(".", var.domain), length(split(".", var.domain)) - 2)}"
+    tld  = "${element(split(".", var.domain), length(split(".", var.domain)) - 1)}"
+  }
+}
+
+data "template_file" "monitoring-user_data" {
+  template = "${file("${path.module}/scripts/setup_monitoring.sh")}"
+
+  vars {
+    aws_id               = "${aws_iam_access_key.monitoring.id}"
+    aws_secret           = "${aws_iam_access_key.monitoring.secret}"
+    dashboard            = "${file("${path.module}/files/dashboard-ops.json")}"
+    domain               = "${replace(var.domain, "*.", "")}"
+    domain_canonical     = "${data.template_file.domain_canonical.rendered}"
+    google_client_id     = "${var.google_client_id}"
+    google_client_secret = "${var.google_client_secret}"
+    region               = "${var.region}"
+    zone                 = "${var.env}-${var.region}"
+  }
+}
+
 resource "aws_instance" "monitoring" {
   ami           = "${var.ami_minimal["${var.region}"]}"
   instance_type = "t2.medium"
@@ -19,6 +44,36 @@ resource "aws_instance" "monitoring" {
 
   tags {
     Name = "monitoring"
+  }
+
+  provisioner "file" {
+    connection {
+      type                = "ssh"
+      user                = "admin"
+      private_key         = "${file("${path.cwd}/access.pem")}"
+      bastion_user        = "admin"
+      bastion_private_key = "${file("${path.cwd}/access.pem")}"
+      bastion_host        = "${aws_eip.bastion.public_ip}"
+    }
+
+    destination = "/tmp/setup.sh"
+    content     = "${data.template_file.monitoring-user_data.rendered}"
+  }
+
+  provisioner "remote-exec" {
+    connection {
+      type                = "ssh"
+      user                = "admin"
+      private_key         = "${file("${path.cwd}/access.pem")}"
+      bastion_user        = "admin"
+      bastion_private_key = "${file("${path.cwd}/access.pem")}"
+      bastion_host        = "${aws_eip.bastion.public_ip}"
+    }
+
+    inline = [
+      "chmod +x /tmp/setup.sh",
+      "sudo /tmp/setup.sh",
+    ]
   }
 }
 
