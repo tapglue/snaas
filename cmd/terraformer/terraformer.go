@@ -62,13 +62,13 @@ const (
 	tfCmdPlan    = "plan"
 	tfCmdRemote  = "remote"
 
-	tplTFVars = `
-domain = "{{.Domain}}"
+	tplTFVars = `domain = "{{.Domain}}"
 key = {
 	access = "{{.KeyAccess}}"
 }
 pg_password = "{{.PGPassword}}"
-`
+google_client_id = "{{.GoogleID}}"
+google_client_secret = "{{.GoogleSecret}}"`
 
 	varAccount = "account"
 	varEnv     = "env"
@@ -77,9 +77,11 @@ pg_password = "{{.PGPassword}}"
 
 // vars bundles together all generated or given input that is custom to the env.
 type vars struct {
-	KeyAccess  string
-	Domain     string
-	PGPassword string
+	Domain       string
+	GoogleID     string
+	GoogleSecret string
+	KeyAccess    string
+	PGPassword   string
 }
 
 func main() {
@@ -205,15 +207,35 @@ func main() {
 			log.Fatal("Can't work without a domain.")
 		}
 
+		fmt.Println("\nIn order to guard the monitoring setup we need Google OAuth credentials.\nWhat is your Google client ID?")
+		fmt.Print("|> ")
+		googleID := ""
+		fmt.Scanf("%s", &googleID)
+
+		if googleID == "" {
+			log.Fatal("Can't work without a Google OAuth credentials.")
+		}
+
+		fmt.Println("\nWhat is your Google client Secret?")
+		fmt.Print("|> ")
+		googleSecret := ""
+		fmt.Scanf("%s", &googleSecret)
+
+		if googleSecret == "" {
+			log.Fatal("Can't work without a Google OAuth credentials.")
+		}
+
 		pubKey, err := generateKeyPair(filepath.Join(statePath, defaultKeyPath))
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		if err = generateVarFile(varFile, vars{
-			Domain:     domain,
-			KeyAccess:  strings.Trim(string(pubKey), "\n"),
-			PGPassword: generate.RandomStringSafe(32),
+			Domain:       domain,
+			GoogleID:     googleID,
+			GoogleSecret: googleSecret,
+			KeyAccess:    strings.Trim(string(pubKey), "\n"),
+			PGPassword:   generate.RandomStringSafe(32),
 		}); err != nil {
 			log.Fatalf("var file create failed: %s", err)
 		}

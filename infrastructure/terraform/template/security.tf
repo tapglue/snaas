@@ -1,3 +1,77 @@
+resource "aws_key_pair" "access" {
+  key_name   = "access"
+  public_key = "${var.key["access"]}"
+}
+
+resource "aws_iam_user" "monitoring" {
+  name = "monitoring-${var.env}-${var.region}"
+  path = "/"
+}
+
+resource "aws_iam_user_policy" "monitoring" {
+  name = "monitoring-${var.env}-${var.region}"
+  user = "${aws_iam_user.monitoring.name}"
+
+  policy = <<EOF
+{
+   "Version": "2012-10-17",
+   "Statement":[{
+      "Effect":"Allow",
+      "Action": [
+        "ec2:DescribeInstances"
+      ],
+      "Resource":"*"
+    }]
+}
+EOF
+}
+
+resource "aws_iam_access_key" "monitoring" {
+  user = "${aws_iam_user.monitoring.name}"
+}
+
+resource "aws_iam_user" "state-change-sr" {
+  name = "state-change-sr-${var.env}-${var.region}"
+  path = "/"
+}
+
+resource "aws_iam_user_policy" "state-change-sr" {
+  name = "state-change-sr-${var.env}-${var.region}"
+  user = "${aws_iam_user.state-change-sr.name}"
+
+  policy = <<EOF
+{
+   "Version": "2012-10-17",
+   "Statement":[{
+      "Effect":"Allow",
+      "Action": [
+        "sqs:GetQueueUrl",
+        "sqs:DeleteMessage",
+        "sqs:ReceiveMessage",
+        "sqs:SendMessage"
+      ],
+      "Resource":"arn:aws:sqs:*:${var.account}:*-state-change"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "sns:CreatePlatformApplication",
+          "sns:CreatePlatformEndpoint",
+          "sns:GetEndpointAttributes",
+          "sns:Publish",
+          "sns:SetEndpointAttributes"
+        ],
+        "Resource": "arn:aws:sns:*:${var.account}:*"
+      }
+   ]
+}
+EOF
+}
+
+resource "aws_iam_access_key" "state-change-sr" {
+  user = "${aws_iam_user.state-change-sr.name}"
+}
+
 resource "aws_iam_role" "ecs-agent" {
   name = "ecs-agent"
 
@@ -141,53 +215,6 @@ resource "aws_security_group" "perimeter" {
   tags {
     Name = "perimeter"
   }
-}
-
-resource "aws_key_pair" "access" {
-  key_name   = "access"
-  public_key = "${var.key["access"]}"
-}
-
-resource "aws_iam_user" "state-change-sr" {
-  name = "state-change-sr-${var.env}-${var.region}"
-  path = "/"
-}
-
-resource "aws_iam_user_policy" "state-change-sr" {
-  name = "state-change-sr-${var.env}-${var.region}"
-  user = "${aws_iam_user.state-change-sr.name}"
-
-  policy = <<EOF
-{
-   "Version": "2012-10-17",
-   "Statement":[{
-      "Effect":"Allow",
-      "Action": [
-        "sqs:GetQueueUrl",
-        "sqs:DeleteMessage",
-        "sqs:ReceiveMessage",
-        "sqs:SendMessage"
-      ],
-      "Resource":"arn:aws:sqs:*:${var.account}:*-state-change"
-      },
-      {
-        "Effect": "Allow",
-        "Action": [
-          "sns:CreatePlatformApplication",
-          "sns:CreatePlatformEndpoint",
-          "sns:GetEndpointAttributes",
-          "sns:Publish",
-          "sns:SetEndpointAttributes"
-        ],
-        "Resource": "arn:aws:sns:*:${var.account}:*"
-      }
-   ]
-}
-EOF
-}
-
-resource "aws_iam_access_key" "state-change-sr" {
-  user = "${aws_iam_user.state-change-sr.name}"
 }
 
 resource "aws_security_group_rule" "perimeter_grafana_out" {
