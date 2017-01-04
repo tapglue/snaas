@@ -260,12 +260,12 @@ func extractLimit(r *http.Request) (int, error) {
 
 func extractReactionType(r *http.Request) (reaction.Type, error) {
 	t, ok := map[string]reaction.Type{
-		"likes":   reaction.TypeLike,
-		"loves":   reaction.TypeLove,
-		"hahas":   reaction.TypeHaha,
-		"wows":    reaction.TypeWow,
-		"sads":    reaction.TypeSad,
-		"angries": reaction.TypeAngry,
+		"like":  reaction.TypeLike,
+		"love":  reaction.TypeLove,
+		"haha":  reaction.TypeHaha,
+		"wow":   reaction.TypeWow,
+		"sad":   reaction.TypeSad,
+		"angry": reaction.TypeAngry,
 	}[mux.Vars(r)[keyReactionType]]
 	if !ok {
 		return 0, fmt.Errorf("reaction type not supported")
