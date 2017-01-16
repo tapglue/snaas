@@ -354,6 +354,7 @@ func (p *payloadPost) MarshalJSON() ([]byte, error) {
 		Attachments  []*payloadAttachment `json:"attachments"`
 		Counts       postCounts           `json:"counts"`
 		CreatedAt    time.Time            `json:"created_at,omitempty"`
+		HasReacted   core.HasReacted      `json:"has_reacted"`
 		ID           string               `json:"id"`
 		IsLiked      bool                 `json:"is_liked"`
 		Restrictions *object.Restrictions `json:"restrictions,omitempty"`
@@ -376,6 +377,7 @@ func (p *payloadPost) MarshalJSON() ([]byte, error) {
 			},
 		},
 		CreatedAt:    p.post.CreatedAt,
+		HasReacted:   p.post.HasReacted,
 		ID:           strconv.FormatUint(p.post.ID, 10),
 		IsLiked:      p.post.IsLiked,
 		Restrictions: p.post.Restrictions,
