@@ -314,6 +314,11 @@ func LikesUser(
 		}
 
 		if !r.isSelf {
+			err = enrichHasReacted(reactions, currentApp, origin, ps)
+			if err != nil {
+				return nil, err
+			}
+
 			err := enrichIsLiked(events, currentApp, origin, ps)
 			if err != nil {
 				return nil, err

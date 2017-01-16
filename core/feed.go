@@ -261,6 +261,11 @@ func FeedEvents(
 			return nil, err
 		}
 
+		err = enrichHasReacted(reactions, currentApp, origin, ps)
+		if err != nil {
+			return nil, err
+		}
+
 		err = enrichIsLiked(events, currentApp, origin, ps)
 		if err != nil {
 			return nil, err
@@ -382,6 +387,11 @@ func FeedNews(
 			return nil, err
 		}
 
+		err = enrichHasReacted(reactions, currentApp, origin, ps)
+		if err != nil {
+			return nil, err
+		}
+
 		err = enrichIsLiked(events, currentApp, origin, ps)
 		if err != nil {
 			return nil, err
@@ -435,6 +445,11 @@ func FeedNews(
 		}
 
 		err = enrichCounts(events, objects, reactions, currentApp, ps)
+		if err != nil {
+			return nil, err
+		}
+
+		err = enrichHasReacted(reactions, currentApp, origin, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -605,6 +620,11 @@ func FeedPosts(
 		}
 
 		err = enrichCounts(events, objects, reactions, currentApp, ps)
+		if err != nil {
+			return nil, err
+		}
+
+		err = enrichHasReacted(reactions, currentApp, origin, ps)
 		if err != nil {
 			return nil, err
 		}

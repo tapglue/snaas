@@ -14,10 +14,21 @@ const TypePost = "tg_post"
 
 var defaultOwned = true
 
+// HasReacted bundles the binary state of a user per reaction.
+type HasReacted struct {
+	Like  bool `json:"like"`
+	Love  bool `json:"love"`
+	Haha  bool `json:"haha"`
+	Wow   bool `json:"wow"`
+	Sad   bool `json:"sad"`
+	Angry bool `json:"angry"`
+}
+
 // Post is the intermediate representation for posts.
 type Post struct {
-	Counts  PostCounts
-	IsLiked bool
+	Counts     PostCounts
+	IsLiked    bool
+	HasReacted HasReacted
 
 	*object.Object
 }
@@ -253,6 +264,11 @@ func PostListAll(
 			return nil, err
 		}
 
+		err = enrichHasReacted(reactions, currentApp, origin, ps)
+		if err != nil {
+			return nil, err
+		}
+
 		err = enrichIsLiked(events, currentApp, origin, ps)
 		if err != nil {
 			return nil, err
@@ -340,6 +356,11 @@ func PostListUser(
 			return nil, err
 		}
 
+		err = enrichHasReacted(reactions, currentApp, origin, ps)
+		if err != nil {
+			return nil, err
+		}
+
 		err = enrichIsLiked(events, currentApp, origin, ps)
 		if err != nil {
 			return nil, err
@@ -405,6 +426,11 @@ func PostRetrieve(
 		post := &Post{Object: os[0]}
 
 		err = enrichCounts(events, objects, reactions, currentApp, PostList{post})
+		if err != nil {
+			return nil, err
+		}
+
+		err = enrichHasReacted(reactions, currentApp, origin, PostList{post})
 		if err != nil {
 			return nil, err
 		}
@@ -635,6 +661,51 @@ func enrichCounts(
 			Likes:          likes,
 			ReactionCounts: reactionCounts,
 		}
+	}
+
+	return nil
+}
+
+func enrichHasReacted(
+	reactions reaction.Service,
+	currentApp *app.App,
+	origin uint64,
+	ps PostList,
+) error {
+	for _, p := range ps {
+		rs, err := reactions.Query(currentApp.Namespace(), reaction.QueryOptions{
+			Deleted: &defaultDeleted,
+			ObjectIDs: []uint64{
+				p.ID,
+			},
+			OwnerIDs: []uint64{
+				origin,
+			},
+		})
+		if err != nil {
+			return nil
+		}
+
+		hasReacted := HasReacted{}
+
+		for _, r := range rs {
+			switch r.Type {
+			case reaction.TypeLike:
+				hasReacted.Like = true
+			case reaction.TypeLove:
+				hasReacted.Love = true
+			case reaction.TypeHaha:
+				hasReacted.Haha = true
+			case reaction.TypeWow:
+				hasReacted.Wow = true
+			case reaction.TypeSad:
+				hasReacted.Sad = true
+			case reaction.TypeAngry:
+				hasReacted.Angry = true
+			}
+		}
+
+		p.HasReacted = hasReacted
 	}
 
 	return nil
