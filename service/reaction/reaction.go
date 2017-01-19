@@ -74,6 +74,7 @@ type Producer interface {
 type QueryOptions struct {
 	Before    time.Time `json:"-"`
 	Deleted   *bool     `json:"deleted,omitempty"`
+	IDs       []uint64  `json:"-"`
 	Limit     int       `json:"-"`
 	ObjectIDs []uint64  `json:"object_ids"`
 	OwnerIDs  []uint64  `json:"owner_ids"`

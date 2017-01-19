@@ -25,13 +25,13 @@ func (s *sourcingService) Put(ns string, input *Reaction) (new *Reaction, err er
 		if err == nil {
 			_, _ = s.producer.Propagate(ns, old, new)
 		}
-	}
+	}()
 
 	if input.ID != 0 {
 		rs, err := s.service.Query(ns, QueryOptions{
-			ID: []uint64{
+			IDs: []uint64{
 				input.ID,
-				},
+			},
 		})
 		if err != nil {
 			return nil, err
