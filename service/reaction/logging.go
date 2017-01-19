@@ -6,6 +6,94 @@ import (
 	"github.com/go-kit/kit/log"
 )
 
+type logSource struct {
+	logger log.Logger
+	next   Source
+}
+
+// LogSourceMiddleware given a Logger wraps the next Source with logging
+// capabilities.
+func LogSourceMiddleware(store string, logger log.Logger) SourceMiddleware {
+	return func(next Source) Source {
+		logger = log.NewContext(logger).With(
+			"source", "reaction",
+			"store", store,
+		)
+
+		return &logSource{
+			logger: logger,
+			next:   next,
+		}
+	}
+}
+
+func (s *logSource) Ack(id string) (err error) {
+	defer func(begin time.Time) {
+		ps := []interface{}{
+			"ack_id", id,
+			"duration_ns", time.Since(begin).Nanoseconds(),
+			"method", "Ack",
+		}
+
+		if err != nil {
+			ps = append(ps, "err", err)
+		}
+
+		_ = s.logger.Log(ps...)
+	}(time.Now())
+
+	return s.next.Ack(id)
+}
+
+func (s *logSource) Consume() (change *StateChange, err error) {
+	defer func(begin time.Time) {
+		ps := []interface{}{
+			"duration_ns", time.Since(begin).Nanoseconds(),
+			"method", "Consume",
+		}
+
+		if change != nil {
+			ps = append(ps,
+				"namespace", change.Namespace,
+				"reaction_new", change.New,
+				"reaction_old", change.Old,
+			)
+		}
+
+		if err != nil {
+			ps = append(ps, "err", err)
+		}
+
+		_ = s.logger.Log(ps...)
+	}(time.Now())
+
+	return s.next.Consume()
+}
+
+func (s *logSource) Propagate(
+	ns string,
+	old, new *Reaction,
+) (id string, err error) {
+	defer func(begin time.Time) {
+		ps := []interface{}{
+			"duration_ns", time.Since(begin).Nanoseconds(),
+			"id", id,
+			"method", "Propagate",
+			"namespace", ns,
+			"event_new", new,
+			"event_old", old,
+		}
+
+		if err != nil {
+			ps = append(ps, "err", err)
+		}
+
+		_ = s.logger.Log(ps...)
+	}(time.Now())
+
+	return s.next.Propagate(ns, old, new)
+}
+
 type logService struct {
 	logger log.Logger
 	next   Service

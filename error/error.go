@@ -24,6 +24,11 @@ var (
 	ErrReactionNotFound = errors.New("reaction not found")
 )
 
+// Source errors.
+var (
+	ErrEmptySource = errors.New("empty source")
+)
+
 // User errors.
 var (
 	ErrUserExists = errors.New("user not unique")
@@ -42,6 +47,11 @@ func (e Error) Error() string {
 // IsDeviceDisabled indicates if err is ErrDeviceDisabled.
 func IsDeviceDisabled(err error) bool {
 	return unwrapError(err) == ErrDeviceDisabled
+}
+
+// IsEmptySource indicates if err is ErrEmptySource.
+func IsEmptySource(err error) bool {
+	return unwrapError(err) == ErrEmptySource
 }
 
 // IsInvalidPlatform indicates if err is ErrInvalidPlatform.

@@ -124,7 +124,7 @@ type logSource struct {
 	next   Source
 }
 
-// LogSourceMiddleware given a Logger raps the next Source logging capabilities.
+// LogSourceMiddleware given a Logger wraps the next Source logging capabilities.
 func LogSourceMiddleware(store string, logger log.Logger) SourceMiddleware {
 	return func(next Source) Source {
 		logger = log.NewContext(logger).With(
@@ -143,6 +143,7 @@ func (s *logSource) Ack(id string) (err error) {
 	defer func(begin time.Time) {
 		ps := []interface{}{
 			"ack_id", id,
+			"duration_ns", time.Since(begin).Nanoseconds(),
 			"method", "Ack",
 		}
 
@@ -166,8 +167,8 @@ func (s *logSource) Consume() (change *StateChange, err error) {
 		if change != nil {
 			ps = append(ps,
 				"namespace", change.Namespace,
-				"object_new", change.New,
-				"object_old", change.Old,
+				"event_new", change.New,
+				"event_old", change.Old,
 			)
 		}
 
@@ -188,8 +189,8 @@ func (s *logSource) Propagate(ns string, old, new *Event) (id string, err error)
 			"id", id,
 			"method", "Propagate",
 			"namespace", ns,
-			"object_new", new,
-			"object_old", old,
+			"event_new", new,
+			"event_old", old,
 		}
 
 		if err != nil {

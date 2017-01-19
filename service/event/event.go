@@ -204,16 +204,6 @@ type Service interface {
 // ServiceMiddleware is a chainable behaviour modifier for Service.
 type ServiceMiddleware func(Service) Service
 
-// StateChange transports all information necessary to observe state changes.
-type StateChange struct {
-	AckID     string
-	ID        string
-	Namespace string
-	New       *Event
-	Old       *Event
-	SentAt    time.Time
-}
-
 // Source encapsulates state change notifications operations.
 type Source interface {
 	source.Acker
@@ -223,6 +213,16 @@ type Source interface {
 
 // SourceMiddleware is a chainable behaviour modifier for Source.
 type SourceMiddleware func(Source) Source
+
+// StateChange transports all information necessary to observe state changes.
+type StateChange struct {
+	AckID     string
+	ID        string
+	Namespace string
+	New       *Event
+	Old       *Event
+	SentAt    time.Time
+}
 
 // Target describes the person addressed in an event. To be phased out.
 type Target struct {

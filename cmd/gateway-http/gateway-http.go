@@ -7,8 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/tapglue/snaas/service/reaction"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	awsSession "github.com/aws/aws-sdk-go/aws/session"
@@ -30,6 +28,7 @@ import (
 	"github.com/tapglue/snaas/service/device"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/session"
 	"github.com/tapglue/snaas/service/user"
 )
@@ -222,9 +221,10 @@ func main() {
 
 	// Setup sources.
 	var (
-		conSource    connection.Source
-		eventSource  event.Source
-		objectSource object.Source
+		conSource      connection.Source
+		eventSource    event.Source
+		objectSource   object.Source
+		reactionSource reaction.Source
 	)
 
 	switch *source {
@@ -246,6 +246,12 @@ func main() {
 		}
 
 		objectSource, err = object.SQSSource(sqsAPI)
+		if err != nil {
+			logger.Log("err", err, "lifecycle", "abort")
+			os.Exit(1)
+		}
+
+		reactionSource, err = reaction.SQSSource(sqsAPI)
 		if err != nil {
 			logger.Log("err", err, "lifecycle", "abort")
 			os.Exit(1)
@@ -287,6 +293,9 @@ func main() {
 		sourceQueueLatency,
 	)(objectSource)
 	objectSource = object.LogSourceMiddleware(*source, logger)(objectSource)
+
+	// TODO: Implement reaction instrumentation middleware
+	reactionSource = reaction.LogSourceMiddleware(*source, logger)(reactionSource)
 
 	// Setup services.
 	var apps app.Service
@@ -366,6 +375,8 @@ func main() {
 		serviceOpLatency,
 	)(reactions)
 	reactions = reaction.LogServiceMiddleware(logger, storeService)(reactions)
+	// Combine reaction service and source.
+	reactions = reaction.SourcingServiceMiddleware(reactionSource)(reactions)
 
 	var sessions session.Service
 	sessions = session.PostgresService(pgClient)

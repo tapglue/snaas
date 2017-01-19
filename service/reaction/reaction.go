@@ -7,6 +7,7 @@ import (
 
 	serr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/service"
+	"github.com/tapglue/snaas/platform/source"
 )
 
 // Supported Reaction types.
@@ -18,6 +19,10 @@ const (
 	TypeSad
 	TypeAngry
 )
+
+type Consumer interface {
+	Consume() (*StateChange, error)
+}
 
 // List is a collection of Reaction.
 type List []*Reaction
@@ -58,6 +63,11 @@ func (m Map) ToList() List {
 	sort.Sort(rs)
 
 	return rs
+}
+
+// Producer creates a state change notification.
+type Producer interface {
+	Propagate(namespace string, old, new *Reaction) (string, error)
 }
 
 // QueryOptions to narrow-down queries.
@@ -109,6 +119,26 @@ type Service interface {
 
 // ServiceMiddleware is a chainable behaviour modifier for Service.
 type ServiceMiddleware func(Service) Service
+
+// Source encapsulates state change notification operations.
+type Source interface {
+	source.Acker
+	Consumer
+	Producer
+}
+
+// SourceMiddleware is a chainable behaviour modifier for Source.
+type SourceMiddleware func(Source) Source
+
+// StateChange transports all information necessary to observe state changes.
+type StateChange struct {
+	AckID     string
+	ID        string
+	Namespace string
+	New       *Reaction
+	Old       *Reaction
+	SentAt    time.Time
+}
 
 // Type is used to distinct Reactions by type.
 type Type uint
