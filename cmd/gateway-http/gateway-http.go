@@ -294,7 +294,14 @@ func main() {
 	)(objectSource)
 	objectSource = object.LogSourceMiddleware(*source, logger)(objectSource)
 
-	// TODO: Implement reaction instrumentation middleware
+	reactionSource = reaction.InstrumentSourceMiddleware(
+		component,
+		*source,
+		sourceErrCount,
+		sourceOpCount,
+		sourceOpLatency,
+		sourceQueueLatency,
+	)(reactionSource)
 	reactionSource = reaction.LogSourceMiddleware(*source, logger)(reactionSource)
 
 	// Setup services.

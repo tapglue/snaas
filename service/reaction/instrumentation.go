@@ -121,3 +121,108 @@ func (s *instrumentService) track(
 		metrics.FieldStore:     s.store,
 	}).Observe(time.Since(begin).Seconds())
 }
+
+type instrumentSource struct {
+	component    string
+	errCount     kitmetrics.Counter
+	opCount      kitmetrics.Counter
+	opLatency    *prometheus.HistogramVec
+	queueLatency *prometheus.HistogramVec
+	next         Source
+	store        string
+}
+
+func InstrumentSourceMiddleware(
+	component, store string,
+	errCount kitmetrics.Counter,
+	opCount kitmetrics.Counter,
+	opLatency *prometheus.HistogramVec,
+	queueLatency *prometheus.HistogramVec,
+) SourceMiddleware {
+	return func(next Source) Source {
+		return &instrumentSource{
+			component:    component,
+			errCount:     errCount,
+			opCount:      opCount,
+			opLatency:    opLatency,
+			queueLatency: queueLatency,
+			next:         next,
+			store:        store,
+		}
+	}
+}
+
+func (s *instrumentSource) Ack(id string) (err error) {
+	defer func(begin time.Time) {
+		s.track("Ack", "", begin, err)
+	}(time.Now())
+
+	return s.next.Ack(id)
+}
+
+func (s *instrumentSource) Consume() (change *StateChange, err error) {
+	defer func(begin time.Time) {
+		ns := ""
+
+		if err == nil && change != nil {
+			ns = change.Namespace
+
+			if !change.SentAt.IsZero() {
+				s.queueLatency.With(prometheus.Labels{
+					metrics.FieldComponent: s.component,
+					metrics.FieldMethod:    "Consume",
+					metrics.FieldNamespace: ns,
+					metrics.FieldSource:    serviceName,
+					metrics.FieldStore:     s.store,
+				}).Observe(time.Since(change.SentAt).Seconds())
+			}
+		}
+
+		s.track("Consume", ns, begin, err)
+	}(time.Now())
+
+	return s.next.Consume()
+}
+
+func (s *instrumentSource) Propagate(
+	ns string,
+	old, new *Reaction,
+) (id string, err error) {
+	defer func(begin time.Time) {
+		s.track("Propagate", ns, begin, err)
+	}(time.Now())
+
+	return s.next.Propagate(ns, old, new)
+}
+
+func (s *instrumentSource) track(
+	method, namespace string,
+	begin time.Time,
+	err error,
+) {
+	if err != nil {
+		s.errCount.With(
+			metrics.FieldComponent, s.component,
+			metrics.FieldMethod, method,
+			metrics.FieldNamespace, namespace,
+			metrics.FieldSource, serviceName,
+			metrics.FieldStore, s.store,
+		).Add(1)
+	} else {
+		s.opCount.With(
+			metrics.FieldComponent, s.component,
+			metrics.FieldMethod, method,
+			metrics.FieldNamespace, namespace,
+			metrics.FieldSource, serviceName,
+			metrics.FieldStore, s.store,
+		).Add(1)
+
+		s.opLatency.With(prometheus.Labels{
+			metrics.FieldComponent: s.component,
+			metrics.FieldMethod:    method,
+			metrics.FieldNamespace: namespace,
+			metrics.FieldSource:    serviceName,
+			metrics.FieldStore:     s.store,
+		}).Observe(time.Since(begin).Seconds())
+	}
+}
