@@ -129,6 +129,7 @@ func testServiceQuery(p prepareFunc, t *testing.T) {
 		&QueryOptions{}:                                  52, // All
 		&QueryOptions{Before: created.UpdatedAt}:         51, // Deleted
 		&QueryOptions{Deleted: &deleted}:                 5,  // Deleted
+		&QueryOptions{IDs: []uint64{created.ID}}:         1,
 		&QueryOptions{Limit: 11}:                         11, // Deleted
 		&QueryOptions{ObjectIDs: []uint64{objectID}}:     3,  // By Object
 		&QueryOptions{OwnerIDs: []uint64{ownerID}}:       11, // By Owner

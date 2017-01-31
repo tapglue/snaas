@@ -7,6 +7,7 @@ import (
 
 	serr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/service"
+	"github.com/tapglue/snaas/platform/source"
 )
 
 // Supported Reaction types.
@@ -18,6 +19,11 @@ const (
 	TypeSad
 	TypeAngry
 )
+
+// Consumer observes state changes.
+type Consumer interface {
+	Consume() (*StateChange, error)
+}
 
 // List is a collection of Reaction.
 type List []*Reaction
@@ -48,6 +54,7 @@ func (rs List) OwnerIDs() []uint64 {
 // Map is a Reaction collection with their id as index.
 type Map map[uint64]*Reaction
 
+// ToList returns a list collection.
 func (m Map) ToList() List {
 	rs := List{}
 
@@ -60,10 +67,16 @@ func (m Map) ToList() List {
 	return rs
 }
 
+// Producer creates a state change notification.
+type Producer interface {
+	Propagate(namespace string, old, new *Reaction) (string, error)
+}
+
 // QueryOptions to narrow-down queries.
 type QueryOptions struct {
 	Before    time.Time `json:"-"`
 	Deleted   *bool     `json:"deleted,omitempty"`
+	IDs       []uint64  `json:"-"`
 	Limit     int       `json:"-"`
 	ObjectIDs []uint64  `json:"object_ids"`
 	OwnerIDs  []uint64  `json:"owner_ids"`
@@ -79,6 +92,34 @@ type Reaction struct {
 	Type      Type
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+// MatchOpts indicates if the Reaction matches the given QueryOptions.
+func (r *Reaction) MatchOpts(opts *QueryOptions) bool {
+	if opts == nil {
+		return true
+	}
+
+	if opts.Deleted != nil && r.Deleted != *opts.Deleted {
+		return false
+	}
+
+	if len(opts.Types) > 0 {
+		discard := true
+
+		for _, t := range opts.Types {
+			if r.Type == t {
+				discard = false
+				break
+			}
+		}
+
+		if discard {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Validate checks for semantic correctness.
@@ -109,6 +150,26 @@ type Service interface {
 
 // ServiceMiddleware is a chainable behaviour modifier for Service.
 type ServiceMiddleware func(Service) Service
+
+// Source encapsulates state change notification operations.
+type Source interface {
+	source.Acker
+	Consumer
+	Producer
+}
+
+// SourceMiddleware is a chainable behaviour modifier for Source.
+type SourceMiddleware func(Source) Source
+
+// StateChange transports all information necessary to observe state changes.
+type StateChange struct {
+	AckID     string
+	ID        string
+	Namespace string
+	New       *Reaction
+	Old       *Reaction
+	SentAt    time.Time
+}
 
 // Type is used to distinct Reactions by type.
 type Type uint

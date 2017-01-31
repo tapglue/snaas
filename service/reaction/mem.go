@@ -121,6 +121,10 @@ func filterList(rs List, opts QueryOptions) List {
 			continue
 		}
 
+		if !inIDs(r.ID, opts.IDs) {
+			continue
+		}
+
 		if !inIDs(r.ObjectID, opts.ObjectIDs) {
 			continue
 		}

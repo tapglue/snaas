@@ -37,6 +37,7 @@ const (
 
 	pgClauseBefore    = `updated_at < ?`
 	pgClauseDeleted   = `deleted = ?`
+	pgClauseIDs       = `id IN (?)`
 	pgClauseObjectIDs = `object_id IN (?)`
 	pgClauseOwnerIDs  = `owner_id IN (?)`
 	pgClauseTypes     = `type IN (?)`
@@ -319,6 +320,22 @@ func convertOpts(opts QueryOptions) (string, []interface{}, error) {
 
 		clauses = append(clauses, clause)
 		params = append(params, *opts.Deleted)
+	}
+
+	if len(opts.IDs) > 0 {
+		ps := []interface{}{}
+
+		for _, id := range opts.IDs {
+			ps = append(ps, id)
+		}
+
+		clause, _, err := sqlx.In(pgClauseIDs, ps)
+		if err != nil {
+			return "", nil, err
+		}
+
+		clauses = append(clauses, clause)
+		params = append(params, ps...)
 	}
 
 	if len(opts.ObjectIDs) > 0 {
