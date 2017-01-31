@@ -224,6 +224,8 @@ func (s *pgService) listRules(
 			r.Criteria = &CriteriaEvent{}
 		case TypeObject:
 			r.Criteria = &CriteriaObject{}
+		case TypeReaction:
+			r.Criteria = &CriteriaReaction{}
 		default:
 			return nil, fmt.Errorf("type not supported")
 		}

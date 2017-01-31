@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tapglue/snaas/service/reaction"
-
 	"github.com/tapglue/snaas/platform/service"
 	"github.com/tapglue/snaas/platform/sns"
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/reaction"
 )
 
 // Type to distinct between different stored criteria.

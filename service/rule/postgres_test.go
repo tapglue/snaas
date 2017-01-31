@@ -16,6 +16,7 @@ import (
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/reaction"
 )
 
 var pgTestURL string
@@ -135,6 +136,38 @@ func TestPostgresPut(t *testing.T) {
 				},
 			},
 			Type: TypeObject,
+		},
+		{
+			Active: true,
+			Criteria: &CriteriaReaction{
+				New: &reaction.QueryOptions{
+					Deleted: &enabled,
+					Types: []reaction.Type{
+						reaction.TypeLike,
+					},
+				},
+				Old: &reaction.QueryOptions{
+					Deleted: &disabled,
+					Types: []reaction.Type{
+						reaction.TypeLike,
+					},
+				},
+			},
+			Deleted:   false,
+			Ecosystem: sns.PlatformAPNS,
+			Name:      "Signal change",
+			Recipients: Recipients{
+				{
+					Query: map[string]string{
+						"foo": "bar",
+					},
+					Templates: map[string]string{
+						"en": "Where we mesage.",
+					},
+					URN: "",
+				},
+			},
+			Type: TypeReaction,
 		},
 	}
 
