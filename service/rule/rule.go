@@ -18,6 +18,7 @@ const (
 	TypeConnection Type = iota
 	TypeEvent
 	TypeObject
+	TypeReaction
 )
 
 type CriteriaConnection struct {

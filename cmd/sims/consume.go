@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 
 	"github.com/tapglue/snaas/core"
+	serr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/sns"
 	"github.com/tapglue/snaas/platform/source"
 	platformSQS "github.com/tapglue/snaas/platform/sqs"
@@ -14,6 +15,7 @@ import (
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/rule"
 )
 
@@ -164,6 +166,50 @@ func consumeEvent(
 		}
 
 		batchc <- batchMessages(currentApp, eventSource, change.AckID, ms)
+	}
+}
+
+func consumeReaction(
+	appFetch core.AppFetchFunc,
+	reactionSource reaction.Source,
+	batchc chan<- batch,
+	pipeline core.PipelineReactionFunc,
+	rules core.RuleListActiveFunc,
+) error {
+	for {
+		change, err := reactionSource.Consume()
+		if err != nil {
+			if serr.IsEmptySource(err) {
+				continue
+			}
+			return err
+		}
+
+		currentApp, err := appForNamespace(appFetch, change.Namespace)
+		if err != nil {
+			return err
+		}
+
+		rs, err := rules(currentApp, rule.TypeReaction)
+		if err != nil {
+			return err
+		}
+
+		ms, err := pipeline(currentApp, change, rs...)
+		if err != nil {
+			return err
+		}
+
+		if len(ms) == 0 {
+			err = reactionSource.Ack(change.AckID)
+			if err != nil {
+				return err
+			}
+
+			continue
+		}
+
+		batchc <- batchMessages(currentApp, reactionSource, change.AckID, ms)
 	}
 }
 

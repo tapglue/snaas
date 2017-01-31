@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/tapglue/snaas/service/rule"
+	"github.com/tapglue/snaas/service/reaction"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -28,6 +28,7 @@ import (
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
 	"github.com/tapglue/snaas/service/platform"
+	"github.com/tapglue/snaas/service/rule"
 	"github.com/tapglue/snaas/service/user"
 )
 
@@ -258,6 +259,21 @@ func main() {
 	)(objectSource)
 	objectSource = object.LogSourceMiddleware(sourceService, logger)(objectSource)
 
+	reactionSource, err := reaction.SQSSource(sqsAPI)
+	if err != nil {
+		logger.Log("err", err, "lifecycle", "abort")
+		os.Exit(1)
+	}
+	reactionSource = reaction.InstrumentSourceMiddleware(
+		component,
+		sourceService,
+		sourceErrCount,
+		sourceOpCount,
+		sourceOpLatency,
+		sourceQueueLatency,
+	)(reactionSource)
+	reactionSource = reaction.LogSourceMiddleware(sourceService, logger)(reactionSource)
+
 	logger.Log(
 		"duration", time.Now().Sub(begin).Nanoseconds(),
 		"lifecycle", "start",
@@ -348,6 +364,20 @@ func main() {
 			objectSource,
 			batchc,
 			core.PipelineObject(connections, objects, users),
+			core.RuleListActive(rules),
+		)
+		if err != nil {
+			logger.Log("err", err, "lifecycle", "abort")
+			os.Exit(1)
+		}
+	}()
+
+	go func() {
+		err := consumeReaction(
+			core.AppFetch(apps),
+			reactionSource,
+			batchc,
+			core.PipelineReaction(objects, users),
 			core.RuleListActive(rules),
 		)
 		if err != nil {
