@@ -6,6 +6,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/tapglue/snaas/service/reaction"
+
 	"golang.org/x/text/language"
 
 	serr "github.com/tapglue/snaas/error"
@@ -295,6 +297,90 @@ func PipelineObject(
 	}
 }
 
+// PipelineReactionFunc constructs a Pipeline that by applying the provided
+// rules outputs Messages.
+type PipelineReactionFunc func(
+	*app.App,
+	*reaction.StateChange,
+	...*rule.Rule,
+) (Messages, error)
+
+// PipelineReaction constructs a Pipeline that by applying the provided rules
+// outputs Messages.
+func PipelineReaction(
+	objects object.Service,
+	users user.Service,
+) PipelineReactionFunc {
+	return func(
+		currentApp *app.App,
+		change *reaction.StateChange,
+		rules ...*rule.Rule,
+	) (Messages, error) {
+		var (
+			ms = Messages{}
+			r  = change.New
+
+			context     *contextReaction
+			owner       *user.User
+			parent      *object.Object
+			parentOwner *user.User
+		)
+
+		owner, err := UserFetch(users)(currentApp, r.OwnerID)
+		if err != nil {
+			return nil, err
+		}
+
+		if r.ObjectID != 0 {
+			parent, err = objectFetch(objects)(currentApp, r.ObjectID)
+			if err != nil {
+				return nil, err
+			}
+
+			parentOwner, err = UserFetch(users)(currentApp, parent.OwnerID)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		context = &contextReaction{
+			Owner:       owner,
+			Parent:      parent,
+			ParentOwner: parentOwner,
+			Reaction:    r,
+		}
+
+		for _, r := range rules {
+			if !r.Criteria.Match(change) {
+				continue
+			}
+
+			for _, recipient := range r.Recipients {
+				rs, err := recipientsReaction()(currentApp, context, recipient.Query)
+				if err != nil {
+					return nil, err
+				}
+
+				for _, r := range rs {
+					urn, err := compileTemplate(context, recipient.URN)
+					if err != nil {
+						return nil, err
+					}
+
+					msg, err := compileTemplate(context, recipient.Templates[language.English.String()])
+					if err != nil {
+						return nil, err
+					}
+
+					ms = append(ms, &Message{Message: msg, Recipient: r.ID, URN: urn})
+				}
+			}
+		}
+
+		return ms, nil
+	}
+}
+
 type contextConnection struct {
 	Conenction *connection.Connection
 	From       *user.User
@@ -314,6 +400,13 @@ type contextObject struct {
 	Owner       *user.User
 	Parent      *object.Object
 	ParentOwner *user.User
+}
+
+type contextReaction struct {
+	Owner       *user.User
+	Parent      *object.Object
+	ParentOwner *user.User
+	Reaction    *reaction.Reaction
 }
 
 func compileTemplate(context interface{}, t string) (string, error) {
@@ -513,6 +606,33 @@ func recipientsObject(
 		us, err := user.ListFromIDs(users, currentApp.Namespace(), ids...)
 		if err != nil {
 			return nil, err
+		}
+
+		return us, nil
+	}
+}
+
+type recipientsReactionFunc func(
+	*app.App,
+	*contextReaction,
+	rule.Query,
+) (user.List, error)
+
+func recipientsReaction() recipientsReactionFunc {
+	return func(
+		currentApp *app.App,
+		context *contextReaction,
+		q rule.Query,
+	) (user.List, error) {
+		us := user.List{}
+
+		for condType := range q {
+			switch condType {
+			case queryCondParentOwner:
+				if context.Owner.ID != context.ParentOwner.ID {
+					us = append(us, context.ParentOwner)
+				}
+			}
 		}
 
 		return us, nil

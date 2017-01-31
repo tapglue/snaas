@@ -20,6 +20,7 @@ const (
 	TypeAngry
 )
 
+// Consumer observes state changes.
 type Consumer interface {
 	Consume() (*StateChange, error)
 }
@@ -53,6 +54,7 @@ func (rs List) OwnerIDs() []uint64 {
 // Map is a Reaction collection with their id as index.
 type Map map[uint64]*Reaction
 
+// ToList returns a list collection.
 func (m Map) ToList() List {
 	rs := List{}
 
@@ -90,6 +92,34 @@ type Reaction struct {
 	Type      Type
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+// MatchOpts indicates if the Reaction matches the given QueryOptions.
+func (r *Reaction) MatchOpts(opts *QueryOptions) bool {
+	if opts == nil {
+		return true
+	}
+
+	if opts.Deleted != nil && r.Deleted != *opts.Deleted {
+		return false
+	}
+
+	if len(opts.Types) > 0 {
+		discard := true
+
+		for _, t := range opts.Types {
+			if r.Type == t {
+				discard = false
+				break
+			}
+		}
+
+		if discard {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Validate checks for semantic correctness.

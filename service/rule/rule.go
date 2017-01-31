@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/tapglue/snaas/service/reaction"
+
 	"github.com/tapglue/snaas/platform/service"
 	"github.com/tapglue/snaas/platform/sns"
 	"github.com/tapglue/snaas/service/connection"
@@ -25,6 +27,28 @@ type CriteriaConnection struct {
 
 func (c *CriteriaConnection) Match(i interface{}) bool {
 	s, ok := i.(*connection.StateChange)
+	if !ok {
+		return false
+	}
+
+	if s.New == nil && s.Old == nil {
+		return false
+	}
+
+	if s.Old == nil {
+		return s.New.MatchOpts(c.New)
+	}
+
+	return s.New.MatchOpts(c.New) && s.Old.MatchOpts(c.Old)
+}
+
+type CriteriaReaction struct {
+	New *reaction.QueryOptions `json:"new"`
+	Old *reaction.QueryOptions `json:"old"`
+}
+
+func (c *CriteriaReaction) Match(i interface{}) bool {
+	s, ok := i.(*reaction.StateChange)
 	if !ok {
 		return false
 	}

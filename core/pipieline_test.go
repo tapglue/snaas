@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/tapglue/snaas/service/reaction"
+
 	"github.com/tapglue/snaas/service/app"
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/event"
@@ -186,6 +188,91 @@ func TestPipelineConnectionCondTo(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(have, want) {
+		t.Errorf("have %#v, want %#v", have, want)
+	}
+}
+
+func TestPipelineReactionCondParentOwner(t *testing.T) {
+	var (
+		currentApp = testApp()
+		objects    = object.MemService()
+		reactions  = reaction.MemService()
+		users      = user.MemService()
+	)
+
+	// Creat Post Owner.
+	postOwner, err := users.Put(currentApp.Namespace(), testUser())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create Post.
+	post, err := objects.Put(currentApp.Namespace(), testPost(postOwner.ID).Object)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create liker.
+	liker, err := users.Put(currentApp.Namespace(), testUser())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create like.
+	like, err := reactions.Put(currentApp.Namespace(), &reaction.Reaction{
+		ObjectID: post.ID,
+		OwnerID:  liker.ID,
+		Type:     reaction.TypeLike,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var (
+		deleted                 = false
+		ruleReactionParentOwner = &rule.Rule{
+			Criteria: &rule.CriteriaReaction{
+				New: &reaction.QueryOptions{
+					Deleted: &deleted,
+					Types: []reaction.Type{
+						reaction.TypeLike,
+					},
+				},
+				Old: nil,
+			},
+			Recipients: rule.Recipients{
+				{
+					Query: map[string]string{
+						"parentOwner": "",
+					},
+					Templates: map[string]string{
+						"en": "{{.Owner.Username}} liked your post",
+					},
+					URN: "tapglue/users/{{.Owner.ID}}",
+				},
+			},
+		}
+	)
+
+	want := Messages{
+		{
+			Message:   fmt.Sprintf("%s liked your post", liker.Username),
+			Recipient: postOwner.ID,
+			URN:       fmt.Sprintf("tapglue/users/%d", liker.ID),
+		},
+	}
+
+	have, err := PipelineReaction(objects, users)(currentApp, &reaction.StateChange{New: like}, ruleReactionParentOwner)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(have, want) {
+		for i, m := range have {
+			fmt.Printf("[%d|%s] %v\n", m.Recipient, m.URN, m.Message[i])
+			fmt.Printf("[%d|%s] %v\n\n", want[i].Recipient, want[i].URN, want[i].Message)
+		}
+
 		t.Errorf("have %#v, want %#v", have, want)
 	}
 }
