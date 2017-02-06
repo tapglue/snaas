@@ -5,7 +5,7 @@ set -o pipefail
 
 echo "|> prepare env"
 export CWD=$(pwd)
-source ~/.gimme/envs/go1.7.4.env
+source ~/.gimme/envs/go1.7.5.env
 
 echo "|> execute tests"
 cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas

@@ -8,8 +8,8 @@ sudo curl -sL -o /usr/local/bin/gimme https://raw.githubusercontent.com/travis-c
 sudo chmod +x /usr/local/bin/gimme
 
 echo "|> install go"
-gimme 1.7.4
-source ~/.gimme/envs/go1.7.4.env
+gimme 1.7.5
+source ~/.gimme/envs/go1.7.5.env
 
 echo "|> prepare directories"
 mkdir -p /home/ubuntu/.go_workspace/src/github.com/tapglue

@@ -5,7 +5,7 @@ set -e
 echo "|> prepare env"
 export PROJECT=/home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
 export REVISION=$(git rev-parse --short HEAD)
-source ~/.gimme/envs/go1.7.4.env
+source ~/.gimme/envs/go1.7.5.env
 
 echo "|> build gateway-http"
 docker run \
@@ -13,7 +13,7 @@ docker run \
 	--rm \
 	-v ~/.go_workspace:/go \
 	-w /go/src/github.com/tapglue/snaas \
-	golang:1.7.3-alpine \
+	golang:1.7.5-alpine3.5 \
 	go build \
 		-ldflags "-X main.revision=${REVISION}" \
 		-o gateway-http_${CIRCLE_BUILD_NUM} \
@@ -25,7 +25,7 @@ docker run \
 	--rm \
 	-v ~/.go_workspace:/go \
 	-w /go/src/github.com/tapglue/snaas \
-	golang:1.7.3-alpine \
+	golang:1.7.5-alpine3.5 \
 	go build \
 		-ldflags "-X main.revision=${REVISION}" \
 		-o sims_${CIRCLE_BUILD_NUM} \
