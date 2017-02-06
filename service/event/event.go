@@ -26,9 +26,10 @@ const (
 
 // TG reserved keywords for types.
 const (
-	TargetUser = "tg_user"
-	TypeFollow = "tg_follow"
-	TypeFriend = "tg_friend"
+	TargetUser   = "tg_user"
+	TypeFollow   = "tg_follow"
+	TypeFriend   = "tg_friend"
+	TypeReaction = "tg_reaction"
 )
 
 // Consumer observes state changes.

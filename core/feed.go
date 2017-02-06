@@ -13,8 +13,6 @@ import (
 	"github.com/tapglue/snaas/service/user"
 )
 
-const namespaceGambify = "app_309_443"
-
 // affiliations is the composite structure to map connections to users.
 type affiliations map[*connection.Connection]*user.User
 
@@ -513,6 +511,7 @@ func FeedNotificationsSelf(
 				sourceComment(objects, currentApp, origin, ps.IDs()...),
 				sourceConnection(fs.connections(), origin, opts),
 				sourceLikes(events, currentApp, opts, origin, ps.IDs()...),
+				sourceReactions(reactions, currentApp, opts, origin, ps.IDs()...),
 				sourceTarget(events, currentApp, origin, opts),
 			}
 		)
@@ -1236,6 +1235,59 @@ func sourceNeighbours(
 
 	return func() (event.List, error) {
 		return events.Query(currentApp.Namespace(), opts)
+	}
+}
+
+// sourceReactions returns all Reactions for the given Posts.
+func sourceReactions(
+	reactions reaction.Service,
+	currentApp *app.App,
+	eventOpts event.QueryOptions,
+	origin uint64,
+	postIDs ...uint64,
+) source {
+	if len(postIDs) == 0 {
+		return func() (event.List, error) {
+			return event.List{}, nil
+		}
+	}
+
+	var (
+		deleted = false
+		opts    = reaction.QueryOptions{
+			Before:    eventOpts.Before,
+			Deleted:   &deleted,
+			Limit:     eventOpts.Limit,
+			ObjectIDs: postIDs,
+		}
+	)
+
+	return func() (event.List, error) {
+		rs, err := reactions.Query(currentApp.Namespace(), opts)
+		if err != nil {
+			return nil, err
+		}
+
+		es := event.List{}
+
+		for _, r := range rs {
+			if r.OwnerID == origin {
+				continue
+			}
+
+			es = append(es, &event.Event{
+				Enabled:    true,
+				ID:         r.ID,
+				Owned:      true,
+				Type:       event.TypeReaction,
+				UserID:     r.OwnerID,
+				Visibility: event.VisibilityPrivate,
+				CreatedAt:  r.CreatedAt,
+				UpdatedAt:  r.UpdatedAt,
+			})
+		}
+
+		return es, nil
 	}
 }
 
