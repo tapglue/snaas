@@ -6,8 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/tapglue/snaas/service/reaction"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	awsSession "github.com/aws/aws-sdk-go/aws/session"
@@ -28,6 +26,7 @@ import (
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
 	"github.com/tapglue/snaas/service/platform"
+	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/rule"
 	"github.com/tapglue/snaas/service/user"
 )
