@@ -20,6 +20,15 @@ const (
 	TypeAngry
 )
 
+var TypeToIdenitifier = map[Type]string{
+	TypeLike:  "like",
+	TypeLove:  "love",
+	TypeHaha:  "haha",
+	TypeWow:   "wow",
+	TypeSad:   "sad",
+	TypeAngry: "angry",
+}
+
 // Consumer observes state changes.
 type Consumer interface {
 	Consume() (*StateChange, error)

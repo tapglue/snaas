@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 
@@ -12,6 +13,8 @@ import (
 	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/user"
 )
+
+const reactionEventFmt = "%s:%s"
 
 // affiliations is the composite structure to map connections to users.
 type affiliations map[*connection.Connection]*user.User
@@ -1276,10 +1279,15 @@ func sourceReactions(
 			}
 
 			es = append(es, &event.Event{
-				Enabled:    true,
-				ID:         r.ID,
-				Owned:      true,
-				Type:       event.TypeReaction,
+				Enabled:  true,
+				ID:       r.ID,
+				Owned:    true,
+				ObjectID: r.ObjectID,
+				Type: fmt.Sprintf(
+					reactionEventFmt,
+					event.TypeReaction,
+					reaction.TypeToIdenitifier[r.Type],
+				),
 				UserID:     r.OwnerID,
 				Visibility: event.VisibilityPrivate,
 				CreatedAt:  r.CreatedAt,
