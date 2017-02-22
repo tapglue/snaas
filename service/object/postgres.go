@@ -29,6 +29,7 @@ const (
 	pgListObjects = `SELECT json_data FROM %s.objects
 		%s`
 
+	pgClauseAfter      = `(json_data->>'created_at') > ?`
 	pgClauseBefore     = `(json_data->>'created_at') < ?`
 	pgClauseDeleted    = `(json_data->>'deleted')::BOOL = ?::BOOL`
 	pgClauseExternalID = `(json_data->>'external_id')::TEXT IN (?)`
@@ -295,6 +296,11 @@ func convertOpts(opts QueryOptions, order ordering) (string, []interface{}, erro
 			opts.Deleted,
 		}
 	)
+
+	if !opts.After.IsZero() {
+		clauses = append(clauses, pgClauseAfter)
+		params = append(params, opts.After.UTC().Format(time.RFC3339Nano))
+	}
 
 	if !opts.Before.IsZero() {
 		clauses = append(clauses, pgClauseBefore)

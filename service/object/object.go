@@ -274,6 +274,7 @@ type Producer interface {
 
 // QueryOptions are passed to narrow down query for objects.
 type QueryOptions struct {
+	After        time.Time    `json:"-"`
 	Before       time.Time    `json:"-"`
 	Deleted      bool         `json:"deleted,omitempty"`
 	ExternalIDs  []string     `json:"-"`
