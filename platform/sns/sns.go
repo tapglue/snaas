@@ -40,9 +40,10 @@ const (
 
 // Push formats.
 const (
-	fmtURN         = `%s://%s`
-	msgAPNS        = `{"APNS": "{\"aps\": {\"alert\": \"%s\"}, \"urn\":\"%s\"}" }`
-	msgAPNSSandbox = `{"APNS_SANDBOX": "{\"aps\": {\"alert\": \"%s\"}, \"urn\":\"%s\"}" }`
+	fmtURN  = `%s://%s`
+	msgAPNS = `{"APNS": "{\"aps\": {\"alert\": \"%s\"}, \"urn\":\"%s\"}" }`
+	// FIXME(xla): Temporary fix until the device migration is done.
+	msgAPNSSandbox = `{"APNS": "{\"aps\": {\"alert\": \"%s\"}, \"urn\":\"%s\"}" }`
 	msgGCM         = `{"GCM": "{\"data\": {\"title\": \"Friends\", \"body\": \"%s\", \"urn\": \"%s\"} }" }`
 )
 
