@@ -51,9 +51,8 @@ func main() {
 	)
 	flag.Parse()
 
-	logger := log.NewContext(
+	logger := log.With(
 		log.NewJSONLogger(os.Stdout),
-	).With(
 		"caller", log.Caller(3),
 		"component", component,
 		"revision", revision,
@@ -65,7 +64,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger = log.NewContext(logger).With("host", hostname)
+	logger = log.With(logger, "host", hostname)
 	if len(flag.Args()) != 1 {
 		logger.Log("err", "missing command", "lifecycle", "abort")
 		os.Exit(1)

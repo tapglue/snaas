@@ -14,7 +14,8 @@ type logService struct {
 // LogServiceMiddleware given a Logger wraps the next Service with logging capabilities.
 func LogServiceMiddleware(logger log.Logger, store string) ServiceMiddleware {
 	return func(next Service) Service {
-		logger = log.NewContext(logger).With(
+		logger = log.With(
+			logger,
 			"service", "device",
 			"store", store,
 		)

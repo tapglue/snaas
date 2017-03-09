@@ -15,7 +15,8 @@ type logSource struct {
 // capabilities.
 func LogSourceMiddleware(store string, logger log.Logger) SourceMiddleware {
 	return func(next Source) Source {
-		logger = log.NewContext(logger).With(
+		logger = log.With(
+			logger,
 			"source", "reaction",
 			"store", store,
 		)
@@ -103,7 +104,8 @@ type logService struct {
 // capabilities.
 func LogServiceMiddleware(logger log.Logger, store string) ServiceMiddleware {
 	return func(next Service) Service {
-		logger = log.NewContext(logger).With(
+		logger = log.With(
+			logger,
 			"service", "reaction",
 			"store", store,
 		)

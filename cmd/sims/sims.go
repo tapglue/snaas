@@ -63,9 +63,8 @@ func main() {
 	)
 	flag.Parse()
 
-	logger := log.NewContext(
+	logger := log.With(
 		log.NewJSONLogger(os.Stdout),
-	).With(
 		"caller", log.Caller(3),
 		"component", component,
 		"revision", revision,
@@ -76,7 +75,7 @@ func main() {
 		logger.Log("err", err, "lifecycle", "abort")
 	}
 
-	logger = log.NewContext(logger).With("host", hostname)
+	logger = log.With(logger, "host", hostname)
 
 	// Setup instrumentation.
 	go func(addr string) {
