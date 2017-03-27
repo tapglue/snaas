@@ -19,3 +19,10 @@ cp -R /home/ubuntu/snaas /home/ubuntu/.go_workspace/src/github.com/tapglue/
 echo "|> install packages"
 cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
 go get -d -v ./...
+
+echo "|> install static asset tool"
+go get github.com/mjibson/esc
+
+echo "|> install Elm tooling"
+npm install -g elm
+npm install -g elm-test

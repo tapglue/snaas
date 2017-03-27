@@ -40,6 +40,17 @@ func InstrumentServiceMiddleware(
 	}
 }
 
+func (s *instrumentService) Count(
+	ns string,
+	opts QueryOptions,
+) (count uint, err error) {
+	defer func(begin time.Time) {
+		s.track("Count", ns, begin, err)
+	}(time.Now())
+
+	return s.next.Count(ns, opts)
+}
+
 func (s *instrumentService) Put(
 	ns string,
 	input *Device,

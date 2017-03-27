@@ -24,6 +24,26 @@ func LogServiceMiddleware(logger log.Logger, store string) ServiceMiddleware {
 	}
 }
 
+func (s *logService) Count(ns string, opts QueryOptions) (count uint, err error) {
+	defer func(begin time.Time) {
+		ps := []interface{}{
+			"device_count", count,
+			"device_opts", opts,
+			"duration_ns", time.Since(begin).Nanoseconds(),
+			"method", "Count",
+			"namespace", ns,
+		}
+
+		if err != nil {
+			ps = append(ps, "err", err)
+		}
+
+		_ = s.logger.Log(ps...)
+	}(time.Now())
+
+	return s.next.Count(ns, opts)
+}
+
 func (s *logService) Put(ns string, input *Device) (output *Device, err error) {
 	defer func(begin time.Time) {
 		ps := []interface{}{

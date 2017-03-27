@@ -6,8 +6,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/tapglue/snaas/service/reaction"
-
 	"golang.org/x/text/language"
 
 	serr "github.com/tapglue/snaas/error"
@@ -15,6 +13,7 @@ import (
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/rule"
 	"github.com/tapglue/snaas/service/user"
 )

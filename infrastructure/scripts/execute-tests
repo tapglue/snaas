@@ -7,7 +7,7 @@ echo "|> prepare env"
 export CWD=$(pwd)
 source ~/.gimme/envs/go1.7.5.env
 
-echo "|> execute tests"
+echo "|> execute Go tests"
 cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
 go test \
 	-v \
@@ -30,3 +30,7 @@ go test \
 	-tags integration \
 	./service/... \
 	-postgres.url="postgres://ubuntu:unicode@127.0.0.1/circle_test?sslmode-disable"
+
+echo "|> execute Elm tests"
+cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas/cmd/console
+make test

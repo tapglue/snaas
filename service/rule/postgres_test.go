@@ -195,6 +195,13 @@ func TestPostgresPut(t *testing.T) {
 		if have, want := list[0], created; !reflect.DeepEqual(have, want) {
 			t.Errorf("\nhave %v\nwant %v", have, want)
 		}
+
+		created.Deleted = true
+
+		_, err = service.Put(namespace, created)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 

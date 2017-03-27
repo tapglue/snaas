@@ -148,7 +148,7 @@ func UserListByEmails(
 	}
 }
 
-// UserListByPlatformIDs returns all users for the given ids for the social
+// UserListByPlatformIDsFunc returns all users for the given ids for the social
 // platform.
 type UserListByPlatformIDsFunc func(
 	currentApp *app.App,

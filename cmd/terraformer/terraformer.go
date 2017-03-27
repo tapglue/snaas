@@ -179,7 +179,6 @@ func main() {
 		}
 
 		args = []string{
-			argState, stateFile,
 			planFile,
 		}
 

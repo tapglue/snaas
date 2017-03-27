@@ -29,6 +29,8 @@ const (
 		WHERE
 			id = $1`
 
+	pgCountDevices = `SELECT count(*) FROM %s.devices
+		%s`
 	pgListDevices = `
 		SELECT
 			deleted, device_id, disabled, endpoint_arn, id, language, platform, token, user_id, created_at, updated_at
@@ -98,6 +100,26 @@ func PostgresService(db *sqlx.DB) Service {
 	return &pgService{
 		db: db,
 	}
+}
+
+func (s *pgService) Count(ns string, opts QueryOptions) (uint, error) {
+	clauses, params, err := convertOpts(opts)
+	if err != nil {
+		return 0, err
+	}
+
+	count, err := s.countDevices(ns, clauses, params...)
+	if err != nil {
+		if pg.IsRelationNotFound(pg.WrapError(err)) {
+			if err := s.Setup(ns); err != nil {
+				return 0, err
+			}
+		}
+
+		count, err = s.countDevices(ns, clauses, params...)
+	}
+
+	return count, err
 }
 
 func (s *pgService) Put(ns string, d *Device) (*Device, error) {
@@ -197,6 +219,25 @@ func (s *pgService) Query(ns string, opts QueryOptions) (List, error) {
 	}
 
 	return ds, err
+}
+
+func (s *pgService) countDevices(
+	ns string,
+	clauses []string,
+	params ...interface{},
+) (uint, error) {
+	c := strings.Join(clauses, "\nAND ")
+
+	if len(clauses) > 0 {
+		c = fmt.Sprintf("WHERE %s", c)
+	}
+
+	query := sqlx.Rebind(sqlx.DOLLAR, fmt.Sprintf(pgCountDevices, ns, c))
+
+	var count uint
+
+	err := s.db.Get(&count, query, params...)
+	return count, err
 }
 
 func (s *pgService) listDevices(

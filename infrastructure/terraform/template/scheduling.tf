@@ -1,3 +1,69 @@
+resource "aws_ecs_service" "console" {
+  cluster = "${aws_ecs_cluster.service.id}"
+
+  depends_on = [
+    "aws_iam_instance_profile.ecs-agent-profile",
+    "aws_db_instance.service-master",
+  ]
+
+  deployment_maximum_percent         = 200
+  deployment_minimum_healthy_percent = 50
+  desired_count                      = 2
+  iam_role                           = "${aws_iam_role.ecs-scheduler.arn}"
+  name                               = "console"
+  task_definition                    = "${aws_ecs_task_definition.console.arn}"
+
+  load_balancer {
+    container_name = "console"
+    container_port = 8084
+    elb_name       = "${aws_elb.console.id}"
+  }
+}
+
+resource "aws_ecs_task_definition" "console" {
+  family = "sims"
+
+  container_definitions = <<EOF
+[
+  {
+    "command": [
+      "./console",
+      "-env", "${var.env}",
+      "-google.callback", "https://console-${var.env}-${var.region}.${data.template_file.domain_full.rendered}/oauth2callback",
+      "-google.client.id", "${var.google_client_id}",
+      "-google.client.secret", "${var.google_client_secret}",
+      "-postgres.url", "postgres://${var.pg_username}:${var.pg_password}@${aws_route53_record.service-master.fqdn}:5432/${var.pg_db_name}?connect_timeout=5&sslmode=require",
+      "-redis.addr", "${aws_route53_record.ratelimiter-cache.fqdn}:6379",
+      "-region", "${var.region}"
+    ],
+    "cpu": 256,
+    "dnsSearchDomains": [
+      "${var.env}.${var.region}"
+    ],
+    "essential": true,
+    "image": "tapglue/snaas:${var.version["console"]}",
+    "logConfiguration": {
+      "logDriver": "syslog"
+    },
+    "memory": 256,
+    "name": "console",
+    "portMappings": [
+      {
+        "containerPort": 8084,
+        "hostPort": 8084
+      },
+      {
+        "containerPort": 9002,
+        "hostPort": 9002
+      }
+    ],
+    "readonlyRootFilesystem": true,
+    "workingDirectory": "/tapglue/"
+  }
+]
+EOF
+}
+
 resource "aws_ecs_service" "gateway-http" {
   cluster = "${aws_ecs_cluster.service.id}"
 
@@ -102,7 +168,7 @@ resource "aws_ecs_task_definition" "sims" {
       "logDriver": "syslog"
     },
     "memory": 512,
-    "name": "gateway-http",
+    "name": "sims",
     "portMappings": [
       {
         "containerPort": 9001,

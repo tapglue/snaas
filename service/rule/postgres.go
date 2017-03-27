@@ -14,6 +14,20 @@ const (
 	pgInsertRule = `INSERT INTO
 		%s.rules(active, criteria, deleted, ecosystem, id, name, recipients, type, created_at, updated_at)
 		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+	pgUpdateRule = `
+		UPDATE
+			%s.rules
+		SET
+			active = $2,
+			criteria = $3,
+			deleted = $4,
+			ecosystem = $5,
+			name = $6,
+			recipients = $7,
+			type = $8,
+			updated_at = $9
+		WHERE
+			id = $1`
 
 	pgClauseActive  = `active = ?`
 	pgClauseDeleted = `deleted = ?`
@@ -64,7 +78,7 @@ func (s *pgService) Put(ns string, r *Rule) (*Rule, error) {
 		return s.insert(ns, r)
 	}
 
-	return nil, fmt.Errorf("Put/Update not implementee")
+	return s.update(ns, r)
 }
 
 func (s *pgService) Query(ns string, opts QueryOptions) (List, error) {
@@ -249,6 +263,51 @@ func (s *pgService) listRules(
 	}
 
 	return rs, nil
+}
+
+func (s *pgService) update(ns string, r *Rule) (*Rule, error) {
+	now, err := time.Parse(pg.TimeFormat, time.Now().UTC().Format(pg.TimeFormat))
+	if err != nil {
+		return nil, err
+	}
+
+	r.UpdatedAt = now
+
+	criteria, err := json.Marshal(r.Criteria)
+	if err != nil {
+		return nil, err
+	}
+
+	recipients, err := json.Marshal(r.Recipients)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		params = []interface{}{
+			r.ID,
+			r.Active,
+			criteria,
+			r.Deleted,
+			r.Ecosystem,
+			r.Name,
+			recipients,
+			r.Type,
+			r.UpdatedAt,
+		}
+		query = fmt.Sprintf(pgUpdateRule, ns)
+	)
+
+	_, err = s.db.Exec(query, params...)
+	if err != nil && pg.IsRelationNotFound(pg.WrapError(err)) {
+		if err := s.Setup(ns); err != nil {
+			return nil, err
+		}
+
+		_, err = s.db.Exec(query, params...)
+	}
+
+	return r, err
 }
 
 func convertOpts(opts QueryOptions) (string, []interface{}, error) {

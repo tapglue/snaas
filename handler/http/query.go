@@ -24,12 +24,14 @@ const (
 
 	headerForwardedProto = "X-Forwarded-Proto"
 
+	keyAppID        = "appID"
 	keyCommentID    = "commentID"
 	keyCursorAfter  = "after"
 	keyCursorBefore = "before"
 	keyLimit        = "limit"
 	keyPostID       = "postID"
 	keyReactionType = "reactionType"
+	keyRuleID       = "ruleID"
 	keyState        = "state"
 	keyUserID       = "userID"
 	keyUserQuery    = "q"
@@ -159,6 +161,10 @@ type eventCondition struct {
 		Type *condition `json:"type,omitempty"`
 	} `json:"object,omitempty"`
 	Type *condition `json:"type,omitempty"`
+}
+
+func extractAppID(r *http.Request) (uint64, error) {
+	return strconv.ParseUint(mux.Vars(r)[keyAppID], 10, 64)
 }
 
 func extractEventOpts(r *http.Request) (event.QueryOptions, error) {
@@ -305,6 +311,10 @@ func extractPostOpts(r *http.Request) (object.QueryOptions, error) {
 
 func extractReactionOpts(r *http.Request) (reaction.QueryOptions, error) {
 	return reaction.QueryOptions{}, nil
+}
+
+func extractRuleID(r *http.Request) (uint64, error) {
+	return strconv.ParseUint(mux.Vars(r)[keyRuleID], 10, 64)
 }
 
 func extractState(r *http.Request) connection.State {
