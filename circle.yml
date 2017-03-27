@@ -1,6 +1,8 @@
 machine:
   environment:
-    GOOROT: /home/ubuntu/.gimme/versions/go1.7.linux.amd64
+    GOOROT: /home/ubuntu/.gimme/versions/go1.8.linux.amd64
+  node:
+    version: 7.7.4
   services:
     - docker
     - redis

@@ -31,6 +31,17 @@ resource "aws_route53_zone" "perimeter" {
   name    = "${replace(var.domain, "*.", "")}"
 }
 
+resource "aws_route53_record" "console" {
+  name    = "console-${var.env}-${var.region}"
+  ttl     = "60"
+  type    = "CNAME"
+  zone_id = "${aws_route53_zone.perimeter.id}"
+
+  records = [
+    "${aws_elb.console.dns_name}",
+  ]
+}
+
 resource "aws_route53_record" "gateway-http" {
   name    = "${var.env}-${var.region}"
   ttl     = "60"

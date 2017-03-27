@@ -7,6 +7,18 @@ export PROJECT=/home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
 export REVISION=$(git rev-parse --short HEAD)
 source ~/.gimme/envs/go1.7.5.env
 
+echo "|> build console"
+docker run \
+	-e GODEBUG=netdns=go \
+	--rm \
+	-v ~/.go_workspace:/go \
+	-w /go/src/github.com/tapglue/snaas \
+	golang:1.7.5-alpine3.5 \
+	go build \
+		-ldflags "-X main.revision=${REVISION}" \
+		-o console_${CIRCLE_BUILD_NUM} \
+		cmd/console/*.go
+
 echo "|> build gateway-http"
 docker run \
 	-e GODEBUG=netdns=go \
@@ -35,6 +47,7 @@ echo "|> build container"
 docker build \
 	-f ${PROJECT}/infrastructure/docker/snaas.docker \
     -t tapglue/snaas:${CIRCLE_BUILD_NUM} \
+    --build-arg CONSOLE_BINARY=console_${CIRCLE_BUILD_NUM} \
     --build-arg GATEWAY_HTTP_BINARY=gateway-http_${CIRCLE_BUILD_NUM} \
     --build-arg SIMS_BINARY=sims_${CIRCLE_BUILD_NUM} \
     ${PROJECT}

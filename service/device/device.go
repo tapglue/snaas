@@ -85,6 +85,7 @@ type QueryOptions struct {
 type Service interface {
 	service.Lifecycle
 
+	Count(namespace string, opts QueryOptions) (uint, error)
 	Put(namespace string, device *Device) (*Device, error)
 	Query(namespace string, opts QueryOptions) (List, error)
 }

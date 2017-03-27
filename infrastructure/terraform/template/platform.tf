@@ -15,6 +15,59 @@ data "template_file" "domain_canonical" {
   }
 }
 
+data "template_file" "domain_full" {
+  template = "$${sub}.$${root}.$${tld}"
+
+  vars {
+    root = "${element(split(".", var.domain), length(split(".", var.domain)) - 2)}"
+    sub = "${element(split(".", var.domain), length(split(".", var.domain)) - 3)}"
+    tld  = "${element(split(".", var.domain), length(split(".", var.domain)) - 1)}"
+  }
+}
+
+resource "aws_elb" "console" {
+  connection_draining         = true
+  connection_draining_timeout = 10
+  cross_zone_load_balancing   = true
+  idle_timeout                = 30
+  name                        = "console"
+
+  security_groups = [
+    "${aws_security_group.perimeter.id}",
+  ]
+
+  subnets = [
+    "${aws_subnet.perimeter-a.id}",
+    "${aws_subnet.perimeter-b.id}",
+  ]
+
+  access_logs = {
+    bucket        = "${aws_s3_bucket.logs-elb.id}"
+    bucket_prefix = "console"
+    interval      = 5
+  }
+
+  health_check {
+    healthy_threshold   = 2
+    interval            = 5
+    target              = "HTTP:8084/health-45016490610398192"
+    timeout             = 2
+    unhealthy_threshold = 2
+  }
+
+  listener {
+    instance_port      = 8084
+    instance_protocol  = "http"
+    lb_port            = 443
+    lb_protocol        = "https"
+    ssl_certificate_id = "${data.aws_acm_certificate.perimeter.arn}"
+  }
+
+  tags {
+    Name = "console"
+  }
+}
+
 data "template_file" "monitoring-user_data" {
   template = "${file("${path.module}/scripts/setup_monitoring.sh")}"
 

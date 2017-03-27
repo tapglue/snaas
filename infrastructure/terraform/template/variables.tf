@@ -123,6 +123,7 @@ variable "pg_password" {
 
 variable "version" {
   default = {
+    "console"      = "289"
     "gateway-http" = "259"
     "sims"         = "259"
   }

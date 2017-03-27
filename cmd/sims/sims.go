@@ -197,7 +197,13 @@ func main() {
 
 	var rules rule.Service
 	rules = rule.PostgresService(pgClient)
-	// TODO: Implement instrumentaiton middleware.
+	rules = rule.InstrumentServiceMiddleware(
+		component,
+		storeService,
+		serviceErrCount,
+		serviceOpCount,
+		serviceOpLatency,
+	)(rules)
 	// TODO: Implement logging middleware.
 
 	var users user.Service

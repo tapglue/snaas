@@ -115,6 +115,12 @@ scrape_configs:
         access_key: ${aws_id}
         secret_key: ${aws_secret}
         port: 9001
+  - job_name: 'console'
+    ec2_sd_configs:
+      - region: '${region}'
+        access_key: ${aws_id}
+        secret_key: ${aws_secret}
+        port: 9002
 " | sudo tee /etc/prometheus/prometheus.yml > /dev/null
 
 # /etc/prometheus/api.rules
