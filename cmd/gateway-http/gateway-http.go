@@ -27,6 +27,7 @@ import (
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/device"
 	"github.com/tapglue/snaas/service/event"
+	"github.com/tapglue/snaas/service/invite"
 	"github.com/tapglue/snaas/service/object"
 	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/session"
@@ -355,6 +356,17 @@ func main() {
 	// TODO: Implement write path to avoid stale counts.
 	// events = event.CacheServiceMiddleware(eventCountsCache)(events)
 
+	var invites invite.Service
+	invites = invite.PostgresService(pgClient)
+	invites = invite.InstrumentServiceMiddleware(
+		component,
+		storeService,
+		serviceErrCount,
+		serviceOpCount,
+		serviceOpLatency,
+	)(invites)
+	invites = invite.LogServiceMiddleware(logger, storeService)(invites)
+
 	var objects object.Service
 	objects = object.PostgresService(pgClient)
 	objects = object.InstrumentServiceMiddleware(
@@ -583,6 +595,16 @@ func main() {
 			withUser,
 			handler.FeedPosts(
 				core.FeedPosts(connections, events, objects, reactions, users),
+			),
+		),
+	)
+
+	// Invite routes.
+	current.Methods("POST").Path(`/me/invites`).Name("deviceCreate").HandlerFunc(
+		handler.Wrap(
+			withUser,
+			handler.InviteCreate(
+				core.InviteCreate(invites),
 			),
 		),
 	)
@@ -867,6 +889,7 @@ func main() {
 			withApp,
 			handler.UserCreate(
 				core.UserCreate(sessions, users),
+				core.UserCreateWithInvite(connections, invites, sessions, users),
 			),
 		),
 	)

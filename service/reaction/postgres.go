@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tapglue/snaas/platform/flake"
-
 	"github.com/jmoiron/sqlx"
 
+	"github.com/tapglue/snaas/platform/flake"
 	"github.com/tapglue/snaas/platform/pg"
 )
 
@@ -92,7 +91,7 @@ func (s *pgService) Count(ns string, opts QueryOptions) (uint, error) {
 		return 0, err
 	}
 
-	return s.countEvents(ns, where, params...)
+	return s.countReactions(ns, where, params...)
 }
 
 func (s *pgService) Put(ns string, r *Reaction) (*Reaction, error) {
@@ -113,7 +112,7 @@ func (s *pgService) Query(ns string, opts QueryOptions) (List, error) {
 		return nil, err
 	}
 
-	return s.listEvents(ns, where, params...)
+	return s.listReactions(ns, where, params...)
 }
 
 func (s *pgService) Setup(ns string) error {
@@ -154,7 +153,7 @@ func (s *pgService) Teardown(ns string) error {
 	return nil
 }
 
-func (s *pgService) countEvents(
+func (s *pgService) countReactions(
 	ns, where string,
 	params ...interface{},
 ) (uint, error) {
@@ -221,7 +220,7 @@ func (s *pgService) insert(ns string, r *Reaction) (*Reaction, error) {
 	return r, err
 }
 
-func (s *pgService) listEvents(
+func (s *pgService) listReactions(
 	ns, where string,
 	params ...interface{},
 ) (List, error) {
@@ -234,8 +233,10 @@ func (s *pgService) listEvents(
 				return nil, err
 			}
 
-			return s.listEvents(ns, where, params...)
+			return s.listReactions(ns, where, params...)
 		}
+
+		return nil, err
 	}
 	defer rows.Close()
 

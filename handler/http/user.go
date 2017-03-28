@@ -15,15 +15,18 @@ import (
 )
 
 // UserCreate stores the provided user and returns it with a valid session.
-func UserCreate(fn core.UserCreateFunc) Handler {
+func UserCreate(
+	createFn core.UserCreateFunc,
+	createWithInviteFn core.UserCreateWithInviteFunc,
+) Handler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 		var (
-			currentApp = appFromContext(ctx)
-			deviceID   = deviceIDFromContext(ctx)
-			p          = payloadUser{}
-			tokenType  = tokenTypeFromContext(ctx)
-
-			origin = createOrigin(deviceID, tokenType, 0)
+			currentApp      = appFromContext(ctx)
+			deviceID        = deviceIDFromContext(ctx)
+			invite, conType = extractInviteConnections(r)
+			p               = payloadUser{}
+			tokenType       = tokenTypeFromContext(ctx)
+			origin          = createOrigin(deviceID, tokenType, 0)
 		)
 
 		err := json.NewDecoder(r.Body).Decode(&p)
@@ -32,7 +35,13 @@ func UserCreate(fn core.UserCreateFunc) Handler {
 			return
 		}
 
-		u, err := fn(currentApp, origin, p.user)
+		var u *user.User
+
+		if invite {
+			u, err = createWithInviteFn(currentApp, origin, p.user, conType)
+		} else {
+			u, err = createFn(currentApp, origin, p.user)
+		}
 		if err != nil {
 			respondError(w, 0, err)
 			return

@@ -24,18 +24,19 @@ const (
 
 	headerForwardedProto = "X-Forwarded-Proto"
 
-	keyAppID        = "appID"
-	keyCommentID    = "commentID"
-	keyCursorAfter  = "after"
-	keyCursorBefore = "before"
-	keyLimit        = "limit"
-	keyPostID       = "postID"
-	keyReactionType = "reactionType"
-	keyRuleID       = "ruleID"
-	keyState        = "state"
-	keyUserID       = "userID"
-	keyUserQuery    = "q"
-	keyWhere        = "where"
+	keyAppID             = "appID"
+	keyCommentID         = "commentID"
+	keyCursorAfter       = "after"
+	keyCursorBefore      = "before"
+	keyInviteConnections = "invite-connections"
+	keyLimit             = "limit"
+	keyPostID            = "postID"
+	keyReactionType      = "reactionType"
+	keyRuleID            = "ruleID"
+	keyState             = "state"
+	keyUserID            = "userID"
+	keyUserQuery         = "q"
+	keyWhere             = "where"
 
 	limitDefault = 25
 	limitMax     = 50
@@ -239,6 +240,23 @@ func extractIDCursorBefore(r *http.Request) (uint64, error) {
 	}
 
 	return strconv.ParseUint(string(cursor), 10, 64)
+}
+
+func extractInviteConnections(r *http.Request) (bool, connection.Type) {
+	param := r.URL.Query().Get(keyInviteConnections)
+
+	if param == "" {
+		return false, ""
+	}
+
+	switch connection.Type(param) {
+	case connection.TypeFollow:
+		return true, connection.TypeFollow
+	case connection.TypeFriend:
+		return true, connection.TypeFriend
+	default:
+		return false, ""
+	}
 }
 
 func extractLikeOpts(r *http.Request) (event.QueryOptions, error) {

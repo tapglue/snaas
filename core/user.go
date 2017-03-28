@@ -9,6 +9,7 @@ import (
 	"github.com/tapglue/snaas/platform/generate"
 	"github.com/tapglue/snaas/service/app"
 	"github.com/tapglue/snaas/service/connection"
+	"github.com/tapglue/snaas/service/invite"
 	"github.com/tapglue/snaas/service/session"
 	"github.com/tapglue/snaas/service/user"
 )
@@ -57,6 +58,38 @@ func UserCreate(
 		}
 
 		return u, nil
+	}
+}
+
+// UserCreateWithInviteFunc stores the provided user, creates a session and
+// sets up pending connections for open invites.
+type UserCreateWithInviteFunc func(
+	currentApp *app.App,
+	origin Origin,
+	u *user.User,
+	conType connection.Type,
+) (*user.User, error)
+
+// UserCreateWithInvite stores the provided user and creates a session.
+func UserCreateWithInvite(
+	connections connection.Service,
+	invites invite.Service,
+	sessions session.Service,
+	users user.Service,
+) UserCreateWithInviteFunc {
+	return func(
+		currentApp *app.App,
+		origin Origin,
+		u *user.User,
+		conType connection.Type,
+	) (output *user.User, err error) {
+		defer func() {
+			if err == nil {
+				mapInvites(connections, invites, currentApp, u, conType)
+			}
+		}()
+
+		return UserCreate(sessions, users)(currentApp, origin, u)
 	}
 }
 
@@ -454,6 +487,7 @@ func UserUpdate(
 // UsersFetchFunc retrieves the users for the given ids.
 type UsersFetchFunc func(currentApp *app.App, ids ...uint64) (user.List, error)
 
+// UsersFetch retrieves the users for the given ids.
 func UsersFetch(users user.Service) UsersFetchFunc {
 	return func(currentApp *app.App, ids ...uint64) (user.List, error) {
 		if len(ids) == 0 {
@@ -662,6 +696,48 @@ func login(
 	}
 
 	return u, nil
+}
+
+func mapInvites(
+	connections connection.Service,
+	invites invite.Service,
+	currentApp *app.App,
+	u *user.User,
+	t connection.Type,
+) {
+	for k, v := range u.SocialIDs {
+		is, err := invites.Query(currentApp.Namespace(), invite.QueryOptions{
+			Deleted: &defaultDeleted,
+			Keys: []string{
+				k,
+			},
+			Values: []string{
+				v,
+			},
+		})
+		if err != nil {
+			continue
+		}
+
+		for _, i := range is {
+			_, err := connections.Put(currentApp.Namespace(), &connection.Connection{
+				FromID: i.UserID,
+				State:  connection.StatePending,
+				Type:   t,
+				ToID:   u.ID,
+			})
+			if err != nil {
+				continue
+			}
+
+			i.Deleted = true
+
+			_, err = invites.Put(currentApp.Namespace(), i)
+			if err != nil {
+				continue
+			}
+		}
+	}
 }
 
 func passwordCompare(dec, enc string) (bool, error) {
