@@ -123,9 +123,9 @@ variable "pg_password" {
 
 variable "version" {
   default = {
-    "console"      = "293"
-    "gateway-http" = "293"
-    "sims"         = "293"
+    "console"      = "301"
+    "gateway-http" = "301"
+    "sims"         = "301"
   }
 
   description = "Versions used for deployed services"
