@@ -1,12 +1,20 @@
 package flake
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/sony/sonyflake"
 )
 
+const fmtNamespace = "%s_%s"
+
 var flakes = map[string]*sonyflake.Sonyflake{}
+
+// Namespace returns the prefixed entity path.
+func Namespace(prefix, entity string) string {
+	return fmt.Sprintf(fmtNamespace, prefix, entity)
+}
 
 // NextID returns the next safe to use ID for the given namespace.
 func NextID(namespace string) (uint64, error) {
