@@ -85,7 +85,7 @@ func UserCreateWithInvite(
 	) (output *user.User, err error) {
 		defer func() {
 			if err == nil {
-				mapInvites(connections, invites, currentApp, u, conType)
+				mapInvites(connections, users, invites, currentApp, u, conType)
 			}
 		}()
 
@@ -700,6 +700,7 @@ func login(
 
 func mapInvites(
 	connections connection.Service,
+	users user.Service,
 	invites invite.Service,
 	currentApp *app.App,
 	u *user.User,
@@ -720,7 +721,7 @@ func mapInvites(
 		}
 
 		for _, i := range is {
-			_, err := connections.Put(currentApp.Namespace(), &connection.Connection{
+			_, err := ConnectionUpdate(connections, users)(currentApp, &connection.Connection{
 				FromID: i.UserID,
 				State:  connection.StatePending,
 				Type:   t,
