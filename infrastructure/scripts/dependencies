@@ -19,6 +19,7 @@ npm install -g elm
 npm install -g elm-test
 
 echo "|> install sysconf"
+cd /home/ubuntu
 if [ ! -d sysconfcpus/bin ];
 then
 	git clone https://github.com/obmarg/libsysconfcpus.git

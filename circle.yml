@@ -12,6 +12,7 @@ dependencies:
     - "/home/ubuntu/.go_workspace"
     - "/home/ubuntu/.gimme"
     - "/home/ubuntu/.npm"
+    - "/home/ubuntu/libsysconfcpus"
     - "/home/ubuntu/sysconfcpus"
   override:
     - ./infrastructure/scripts/dependencies
