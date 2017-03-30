@@ -7,18 +7,9 @@ echo "|> install gimme"
 sudo curl -sL -o /usr/local/bin/gimme https://raw.githubusercontent.com/travis-ci/gimme/master/gimme
 sudo chmod +x /usr/local/bin/gimme
 
-echo "|> install go"
+echo "|> install Go"
 gimme 1.7.5
 source ~/.gimme/envs/go1.7.5.env
-
-echo "|> prepare directories"
-mkdir -p /home/ubuntu/.go_workspace/src/github.com/tapglue
-rm -rf /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
-cp -R /home/ubuntu/snaas /home/ubuntu/.go_workspace/src/github.com/tapglue/
-
-echo "|> install packages"
-cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
-go get -d -v ./...
 
 echo "|> install static asset tool"
 go get github.com/mjibson/esc
@@ -26,3 +17,15 @@ go get github.com/mjibson/esc
 echo "|> install Elm tooling"
 npm install -g elm
 npm install -g elm-test
+
+echo "|> prepare directories"
+mkdir -p /home/ubuntu/.go_workspace/src/github.com/tapglue
+rm -rf /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
+cp -R /home/ubuntu/snaas /home/ubuntu/.go_workspace/src/github.com/tapglue/
+
+echo "|> install Go packages"
+cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
+go get -d -v ./...
+
+echo "|> install Elm packages"
+elm-package install -y
