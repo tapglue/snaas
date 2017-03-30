@@ -18,6 +18,15 @@ echo "|> install Elm tooling"
 npm install -g elm
 npm install -g elm-test
 
+echo "|> install sysconf"
+if [ ! -d sysconfcpus/bin ];
+then
+	git clone https://github.com/obmarg/libsysconfcpus.git
+	cd libsysconfcpus
+	./configure --prefix=/home/ubuntu/sysconfcpus
+	make && make install
+fi
+
 echo "|> prepare directories"
 mkdir -p /home/ubuntu/.go_workspace/src/github.com/tapglue
 rm -rf /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
