@@ -28,4 +28,5 @@ cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
 go get -d -v ./...
 
 echo "|> install Elm packages"
+cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas/cmd/console
 elm-package install -y

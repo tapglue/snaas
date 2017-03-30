@@ -30,7 +30,3 @@ go test \
 	-tags integration \
 	./service/... \
 	-postgres.url="postgres://ubuntu:unicode@127.0.0.1/circle_test?sslmode-disable"
-
-echo "|> execute Elm tests"
-cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas/cmd/console
-make test
