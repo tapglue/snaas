@@ -5,12 +5,16 @@ machine:
     version: 7.7.4
   services:
     - docker
-    - redis
     - postgresql
+    - redis
 dependencies:
   cache_directories:
     - "/home/ubuntu/.go_workspace"
     - "/home/ubuntu/.gimme"
+    - "/home/ubuntu/.npm"
+    - "/home/ubuntu/libsysconfcpus"
+    - "/home/ubuntu/sysconfcpus"
+    - "/home/ubuntu/snaas/cmd/console/tests/elm-stuff"
   override:
     - ./infrastructure/scripts/dependencies
   pre:
@@ -20,7 +24,8 @@ database:
     - PGPASSWORD=unicode psql -U ubuntu -d circle_test -f platform/pg/setup.sql -h 127.0.0.1
 test:
   override:
-    - ./infrastructure/scripts/execute-tests
+    - ./infrastructure/scripts/execute-go-tests
+    - ./infrastructure/scripts/execute-elm-tests
 deployment:
   docker:
     branch: master
