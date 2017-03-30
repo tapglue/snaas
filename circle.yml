@@ -5,12 +5,13 @@ machine:
     version: 7.7.4
   services:
     - docker
-    - redis
     - postgresql
+    - redis
 dependencies:
   cache_directories:
     - "/home/ubuntu/.go_workspace"
     - "/home/ubuntu/.gimme"
+    - "/home/ubuntu/.npm"
   override:
     - ./infrastructure/scripts/dependencies
   pre:
