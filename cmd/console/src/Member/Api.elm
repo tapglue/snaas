@@ -10,6 +10,7 @@ fetchMember token =
     Http.post "/api/me" (Http.jsonBody (encodeAuth token)) decode
         |> sendRequest
 
+
 loginMember : String -> Cmd (WebData Member)
 loginMember code =
     Http.post "/api/me/login" (Http.jsonBody (encode code)) decode

@@ -20,6 +20,7 @@ import Route
 import Rule.Model exposing (Rule)
 import Rule.View exposing (viewRuleDescription, viewRuleItem, viewRuleTable)
 
+
 getPage : Model -> Html Msg
 getPage model =
     if isLoggedIn model then
@@ -58,6 +59,7 @@ getPage model =
     else
         pageGuard model
 
+
 view : Model -> Html Msg
 view model =
     div [ class "content" ]
@@ -78,7 +80,8 @@ pageApp { app, startTime, time } =
                             , ( app.counts.posts, "Posts", "files_single-content-02", (Navigate (Route.Rules app.id)) )
                             , ( app.counts.rules, "Rules", "education_book-39", (Navigate (Route.Rules app.id)) )
                             , ( app.counts.users, "Users", "users_multiple-11", (Navigate (Route.Users app.id)) )
-                            ])
+                            ]
+                        )
 
                 _ ->
                     div [] []
@@ -90,14 +93,13 @@ pageApp { app, startTime, time } =
                     ]
                 , p [] [ text app.description ]
                 ]
-
     in
         main_ []
             [ viewContextApps app
             , Container.view (section [ class "highlight" ])
                 [ viewWebData viewApp startTime time app ]
             , Container.view (section [ id "entities" ])
-                [  viewEntities app
+                [ viewEntities app
                 ]
             ]
 
@@ -112,14 +114,13 @@ pageApps { app, apps, appForm, newApp, startTime, time } =
             if List.length apps == 0 then
                 div []
                     [ h3 [] [ text "Looks like you haven't created an App yet." ]
-                    --, formApp newApp appForm startTime time
+                      --, formApp newApp appForm startTime time
                     ]
             else
                 div []
                     [ viewAppsTable viewItem apps
-                    --, formApp newApp appForm startTime time
+                      --, formApp newApp appForm startTime time
                     ]
-
     in
         main_ []
             [ viewContextApps app
@@ -138,7 +139,6 @@ pageDashboard { member, zone } =
 
                 _ ->
                     ""
-
     in
         Container.view (section [ id "dashboard" ])
             [ h2 []
@@ -157,6 +157,7 @@ pageDashboard { member, zone } =
                 ]
             ]
 
+
 pageGuard : Model -> Html Msg
 pageGuard model =
     let
@@ -167,14 +168,14 @@ pageGuard model =
 
                 _ ->
                     Loader.view 64 (rgb 63 91 96) (Loader.nextStep model.startTime model.time)
-
     in
         Container.view (section [])
             [ content ]
 
+
 pageLogin : Model -> Html Msg
 pageLogin model =
-    Container.view(section [ class "highlight" ])
+    Container.view (section [ class "highlight" ])
         [ h3 []
             [ text "Welcome, in order to continue you need to login with "
             , a [ href model.loginUrl, title "Google login" ]
@@ -183,6 +184,7 @@ pageLogin model =
                 ]
             ]
         ]
+
 
 pageNotFound : Html Msg
 pageNotFound =
@@ -220,12 +222,12 @@ pageRule { app, appId, rule, startTime, time } =
         viewRecipient recipient =
             div [ class "recipient" ]
                 [ div [ class "meta" ]
-                    ( (List.map viewTarget recipient.targets)
-                    ++ [ div [ class "urn" ]
-                            [ span [] [ text "URN: " ]
-                            , pre [] [ text recipient.urn ]
-                            ]
-                        ]
+                    ((List.map viewTarget recipient.targets)
+                        ++ [ div [ class "urn" ]
+                                [ span [] [ text "URN: " ]
+                                , pre [] [ text recipient.urn ]
+                                ]
+                           ]
                     )
                 , div [ class "templates" ]
                     [ viewTemplates recipient.templates
@@ -291,7 +293,6 @@ pageRules { app, appId, rule, rules, startTime, time } =
 
         content =
             viewWebData (viewRuleTable viewItem) startTime time rules
-
     in
         div []
             [ viewContextApps app
@@ -356,6 +357,7 @@ viewDebug model =
         [ text (toString model)
         ]
 
+
 viewEntity : ( Int, String, String, Msg ) -> Html Msg
 viewEntity ( count, entity, icon, msg ) =
     li []
@@ -368,6 +370,7 @@ viewEntity ( count, entity, icon, msg ) =
                 ]
             ]
         ]
+
 
 viewHeader : Model -> Html Msg
 viewHeader { member, zone } =
@@ -386,11 +389,16 @@ viewHeader { member, zone } =
             ]
         ]
 
+
 viewFooter : Model -> Html Msg
 viewFooter model =
     Container.view (footer [])
         []
-        --[ viewDebug model ]
+
+
+
+--[ viewDebug model ]
+
 
 viewProfile : WebData Member -> Html Msg
 viewProfile member =
@@ -404,6 +412,7 @@ viewProfile member =
         _ ->
             h3 [] []
 
+
 viewSelected : Msg -> String -> Html Msg
 viewSelected msg name =
     nav []
@@ -412,6 +421,7 @@ viewSelected msg name =
             , span [ class "icon nc-icon-outline arrows-2_skew-down" ] []
             ]
         ]
+
 
 viewWebData : (a -> Html Msg) -> Time -> Time -> WebData a -> Html Msg
 viewWebData view startTime time data =

@@ -21,7 +21,6 @@ all =
 
                     Ok _ ->
                         Expect.fail "shouldn't be Ok"
-
         , test "storing and retrieving a key" <|
             \() ->
                 case LocalStorage.set "foo" "bar" of
@@ -35,5 +34,4 @@ all =
 
                             Ok val ->
                                 Expect.equal val "bar"
-
         ]

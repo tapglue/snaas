@@ -20,6 +20,7 @@ type alias Flags =
     , zone : String
     }
 
+
 type alias Model =
     { app : WebData App
     , apps : WebData (List App)
@@ -46,7 +47,6 @@ init { loginUrl, zone } location =
 
         model =
             initModel loginUrl zone route
-
     in
         case route of
             Just (Route.OAuthCallback code _) ->
@@ -68,9 +68,11 @@ init { loginUrl, zone } location =
                     Ok token ->
                         ( model, Cmd.map MemberFetch (fetchMember token) )
 
+
 initModel : String -> String -> Maybe Route -> Model
 initModel loginUrl zone route =
     Model NotAsked NotAsked initAppForm "" "" loginUrl Loading NotAsked route NotAsked NotAsked 0 0 zone
+
 
 initRoute : Model -> ( Model, Cmd Msg )
 initRoute model =
@@ -118,10 +120,12 @@ initRoute model =
         _ ->
             ( model, Cmd.none )
 
+
 isLoggedIn : Model -> Bool
 isLoggedIn model =
     case model.member of
         Success _ ->
             True
+
         _ ->
             False

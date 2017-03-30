@@ -6,12 +6,19 @@ import Json.Decode as Decode
 
 -- MODEL
 
+
 type Criteria
     = EventCriteria
     | ObjectCriteria
 
+
 type Entity
-    = Connection | Event | Object | Reaction | UnknownEntity
+    = Connection
+    | Event
+    | Object
+    | Reaction
+    | UnknownEntity
+
 
 type alias Recipient =
     { query : List Query
@@ -32,8 +39,12 @@ type alias Rule =
     , recipients : List Recipient
     }
 
+
 type Target
-    = Commenters | PostOwner | UnknownTarget
+    = Commenters
+    | PostOwner
+    | UnknownTarget
+
 
 type alias Query =
     ( String, String )
@@ -57,6 +68,7 @@ matchEntity enum =
         _ ->
             UnknownEntity
 
+
 matchTarget : Query -> Target
 matchTarget query =
     case query of
@@ -68,6 +80,7 @@ matchTarget query =
 
         ( _, _ ) ->
             UnknownTarget
+
 
 targetString : Target -> String
 targetString target =
@@ -98,11 +111,16 @@ decode =
         (Decode.field "name" Decode.string)
         (Decode.field "recipients" (Decode.list decodeRecipient))
 
+
+decodeCriteria : Decode.Decoder Criteria
 decodeCriteria =
     Decode.succeed EventCriteria
 
+
+decodeEntity : Int -> Decode.Decoder Entity
 decodeEntity raw =
     Decode.succeed (matchEntity raw)
+
 
 decodeList : Decode.Decoder (List Rule)
 decodeList =
@@ -117,6 +135,7 @@ decodeRecipient =
         (Decode.field "templates" (Decode.dict Decode.string))
         (Decode.field "urn" Decode.string)
 
-decodeRecipientTarget : List (String, String) -> Decode.Decoder (List Target)
+
+decodeRecipientTarget : List ( String, String ) -> Decode.Decoder (List Target)
 decodeRecipientTarget queries =
-   Decode.succeed (List.map matchTarget queries)
+    Decode.succeed (List.map matchTarget queries)

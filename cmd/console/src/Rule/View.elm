@@ -4,8 +4,8 @@ import Html exposing (Html, a, div, h2, h3, section, span, strong, table, tbody,
 import Html.Attributes exposing (class, title)
 import Html.Events exposing (onClick)
 import Rule.Model exposing (Rule)
-
 import Rule.Model exposing (Entity(..))
+
 
 viewActivated : Bool -> Html msg
 viewActivated active =
@@ -13,6 +13,7 @@ viewActivated active =
         span [ class "nc-icon-outline ui-1_check-circle-08" ] []
     else
         span [ class "nc-icon-outline ui-1_circle-remove" ] []
+
 
 viewEcosystem : Int -> Html msg
 viewEcosystem ecosystem =
@@ -22,6 +23,7 @@ viewEcosystem ecosystem =
 
         _ ->
             span [ class "nc-icon-outline ui-2_alert", title "unknown" ] []
+
 
 viewEntity : Entity -> Html msg
 viewEntity entity =
@@ -40,6 +42,7 @@ viewEntity entity =
 
         UnknownEntity ->
             span [ class "nc-icon-outline ui-2_alert", title "Unknown" ] []
+
 
 viewRuleDescription : Rule -> Html msg
 viewRuleDescription rule =
@@ -134,39 +137,39 @@ viewRuleTable item rules =
 
 sortByEntity : Rule -> Rule -> Order
 sortByEntity a b =
-    case (a.entity, b.entity) of
-        (Connection, Connection) ->
+    case ( a.entity, b.entity ) of
+        ( Connection, Connection ) ->
             EQ
 
-        (Connection, _) ->
+        ( Connection, _ ) ->
             LT
 
-        (Event, Connection) ->
+        ( Event, Connection ) ->
             GT
 
-        (Event, Event) ->
+        ( Event, Event ) ->
             EQ
 
-        (Event, _) ->
+        ( Event, _ ) ->
             LT
 
-        (Object, Connection) ->
+        ( Object, Connection ) ->
             GT
 
-        (Object, Event) ->
+        ( Object, Event ) ->
             GT
 
-        (Object, Object) ->
+        ( Object, Object ) ->
             EQ
 
-        (Object, _) ->
+        ( Object, _ ) ->
             LT
 
-        (Reaction, Reaction) ->
+        ( Reaction, Reaction ) ->
             EQ
 
-        (Reaction, _) ->
+        ( Reaction, _ ) ->
             GT
 
-        (UnknownEntity, _) ->
+        ( UnknownEntity, _ ) ->
             GT

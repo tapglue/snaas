@@ -22,7 +22,7 @@ type alias App =
 
 type alias Counts =
     { comments : Int
-    , connections: Int
+    , connections : Int
     , devices : Int
     , posts : Int
     , rules : Int

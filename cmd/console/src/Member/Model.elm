@@ -8,11 +8,13 @@ type alias Auth =
     { accessToken : String
     }
 
+
 type alias Member =
     { auth : Auth
     , name : String
     , picture : String
     }
+
 
 decode : Decode.Decoder Member
 decode =
@@ -21,16 +23,19 @@ decode =
         (Decode.field "name" Decode.string)
         (Decode.field "picture" Decode.string)
 
+
 decodeAuth : Decode.Decoder Auth
 decodeAuth =
     Decode.map Auth
         (Decode.field "access_token" Decode.string)
+
 
 encode : String -> Encode.Value
 encode code =
     Encode.object
         [ ( "code", Encode.string code )
         ]
+
 
 encodeAuth : String -> Encode.Value
 encodeAuth token =
