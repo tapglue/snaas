@@ -4,5 +4,5 @@ set -e
 set -o pipefail
 
 echo "|> execute Elm tests"
-cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas/cmd/console
+cd /home/ubuntu/snaas/cmd/console
 /home/ubuntu/sysconfcpus/bin/sysconfcpus -n 2 make test

@@ -28,6 +28,10 @@ then
 	make && make install
 fi
 
+echo "|> install Elm packages"
+cd /home/ubuntu/snaas/cmd/console/tests
+elm-package install -y
+
 echo "|> prepare directories"
 mkdir -p /home/ubuntu/.go_workspace/src/github.com/tapglue
 rm -rf /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
@@ -36,7 +40,3 @@ cp -R /home/ubuntu/snaas /home/ubuntu/.go_workspace/src/github.com/tapglue/
 echo "|> install Go packages"
 cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
 go get -d -v ./...
-
-echo "|> install Elm packages"
-cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas/cmd/console
-elm-package install -y
