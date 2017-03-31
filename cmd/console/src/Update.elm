@@ -3,7 +3,7 @@ module Update exposing (update)
 import RemoteData exposing (RemoteData(Failure, Loading, NotAsked, Success), WebData)
 import Task
 import Action exposing (Msg(..))
-import Ask exposing (askRuleActivate, askRuleDeactivate, askRuleDelete)
+import Confirm
 import Formo exposing (blurElement, elementValue, focusElement, updateElementValue, validateForm)
 import LocalStorage
 import Model exposing (Flags, Model, init, initRoute)
@@ -11,13 +11,6 @@ import App.Api exposing (createApp)
 import App.Model exposing (initAppForm)
 import Route
 import Rule.Api exposing (activateRule, deactivateRule, deleteRule)
-
-
-saveToken : String -> Task.Task Never String
-saveToken token =
-    case (LocalStorage.set "token" token) of
-        _ ->
-            Task.succeed token
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -108,10 +101,7 @@ update msg model =
             ( model, Cmd.map LocationChange (Route.navigate (Route.Rule model.appId id)) )
 
         RuleActivateAsk id ->
-            ( model, askRuleActivate id )
-
-        RuleActivateConfirm id ->
-            ( model, activateRule RuleActivate model.appId id )
+            ( model, guardConfirm "You want to activate this ruel?" (activateRule RuleActivate model.appId id) )
 
         RuleDeactivate (Err _) ->
             ( model, Cmd.none )
@@ -120,16 +110,10 @@ update msg model =
             ( model, Cmd.map LocationChange (Route.navigate (Route.Rule model.appId id)) )
 
         RuleDeactivateAsk id ->
-            ( model, askRuleDeactivate id )
-
-        RuleDeactivateConfirm id ->
-            ( model, deactivateRule RuleDeactivate model.appId id )
+            ( model, guardConfirm "You want to deactivate this rule?" (deactivateRule RuleDeactivate model.appId id) )
 
         RuleDeleteAsk id ->
-            ( model, askRuleDelete id )
-
-        RuleDeleteConfirm id ->
-            ( model, Cmd.map RuleDelete (deleteRule model.appId id) )
+            ( model, guardConfirm "You want to delete this rule?" (Cmd.map RuleDelete (deleteRule model.appId id)) )
 
         RuleDelete _ ->
             ( model, Cmd.map LocationChange (Route.navigate (Route.Rules model.appId)) )
@@ -165,3 +149,21 @@ appendWebData list single =
 
                 Just list ->
                     RemoteData.succeed (list ++ [ a ])
+
+guardConfirm : String -> Cmd Msg -> Cmd Msg
+guardConfirm question cmd =
+    case Confirm.dialog question of
+        Err _ ->
+            Cmd.none
+
+        Ok confirm ->
+            if confirm then
+                cmd
+            else
+                Cmd.none
+
+saveToken : String -> Task.Task Never String
+saveToken token =
+    case (LocalStorage.set "token" token) of
+        _ ->
+            Task.succeed token

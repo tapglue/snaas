@@ -77,30 +77,6 @@ var (
 			loginUrl: "{{.LoginURL}}",
 			zone: "{{.Zone}}"
 		});
-
-		app.ports.askRuleActivate.subscribe(function(id) {
-			var answer = window.confirm("Do you want to activate this Rule?");
-
-			if (answer) {
-				app.ports.confirmRuleActivate.send(id);
-			}
-		})
-
-		app.ports.askRuleDeactivate.subscribe(function(id) {
-			var answer = window.confirm("Do you want to deactivate this Rule?");
-
-			if (answer) {
-				app.ports.confirmRuleDeactivate.send(id);
-			}
-		});
-
-		app.ports.askRuleDelete.subscribe(function(id) {
-			var answer = window.confirm("Do you really want to delete this Rule?");
-
-			if (answer) {
-				app.ports.confirmRuleDelete.send(id);
-			}
-		})
     </script>
  </body>
 </html>`

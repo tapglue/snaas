@@ -27,12 +27,9 @@ type Msg
     | NewApp (WebData App)
     | RuleActivate (Result Http.Error String)
     | RuleActivateAsk String
-    | RuleActivateConfirm String
     | RuleDeactivate (Result Http.Error String)
     | RuleDeactivateAsk String
-    | RuleDeactivateConfirm String
     | RuleDeleteAsk String
-    | RuleDeleteConfirm String
     | RuleDelete (WebData Bool)
     | Tick Time
     | TokenPersist String

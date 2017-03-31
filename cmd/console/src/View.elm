@@ -21,6 +21,8 @@ import Rule.Model exposing (Rule)
 import Rule.View exposing (viewRuleDescription, viewRuleItem, viewRuleTable)
 
 
+
+
 getPage : Model -> Html Msg
 getPage model =
     if isLoggedIn model then
