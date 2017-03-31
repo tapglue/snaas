@@ -21,8 +21,6 @@ import Rule.Model exposing (Rule)
 import Rule.View exposing (viewRule, viewRuleItem, viewRuleTable)
 
 
-
-
 view : Model -> Html Msg
 view model =
     div [ class "content" ]
@@ -230,7 +228,6 @@ pageRule { app, appId, rule, startTime, time } =
                         ]
                     ]
                 ]
-
     in
         div []
             [ viewContextApps app

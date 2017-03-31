@@ -150,6 +150,7 @@ appendWebData list single =
                 Just list ->
                     RemoteData.succeed (list ++ [ a ])
 
+
 guardConfirm : String -> Cmd Msg -> Cmd Msg
 guardConfirm question cmd =
     case Confirm.dialog question of
@@ -161,6 +162,7 @@ guardConfirm question cmd =
                 cmd
             else
                 Cmd.none
+
 
 saveToken : String -> Task.Task Never String
 saveToken token =

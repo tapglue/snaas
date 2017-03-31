@@ -49,6 +49,7 @@ viewEcosystemButton ecosystem =
                 , span [] [ text "Unknown" ]
                 ]
 
+
 viewEcosystemIcon : Int -> Html msg
 viewEcosystemIcon ecosystem =
     case ecosystem of
@@ -57,6 +58,7 @@ viewEcosystemIcon ecosystem =
 
         _ ->
             span [ class "nc-icon-outline ui-2_alert", title "unknown" ] []
+
 
 viewEntityIcon : Entity -> Html msg
 viewEntityIcon entity =
@@ -96,12 +98,12 @@ viewEntityButton entity =
 
                 UnknownEntity ->
                     ( "Unknown", "ui-2_alert" )
-
     in
         div [ class "icon", title name ]
             [ span [ class ("nc-icon-outline " ++ icon) ] []
             , span [] [ text "Connections" ]
             ]
+
 
 viewRecipient : Recipient -> Html msg
 viewRecipient recipient =
@@ -119,6 +121,7 @@ viewRecipient recipient =
             ]
         ]
 
+
 viewRule : Rule -> Html msg
 viewRule rule =
     div []
@@ -129,6 +132,7 @@ viewRule rule =
             ]
         , div [ class "recipients" ] (List.map viewRecipient rule.recipients)
         ]
+
 
 viewRuleDescription : Rule -> Html msg
 viewRuleDescription rule =
@@ -159,7 +163,6 @@ viewRuleTable item rules =
     let
         list =
             List.sortWith sortByEntity rules
-
     in
         table [ class "navigation" ]
             [ thead []
@@ -174,6 +177,7 @@ viewRuleTable item rules =
             , tbody [] (List.map item list)
             ]
 
+
 viewTarget : Target -> Html msg
 viewTarget target =
     div [ class "target" ]
@@ -181,12 +185,14 @@ viewTarget target =
         , strong [] [ text (Rule.Model.targetString target) ]
         ]
 
+
 viewTemplate : ( String, String ) -> Html msg
 viewTemplate ( lang, template ) =
     tr []
         [ td [] [ text lang ]
         , td [] [ text template ]
         ]
+
 
 viewTemplates templates =
     table []
@@ -198,7 +204,6 @@ viewTemplates templates =
             ]
         , tbody [] (List.map viewTemplate (Dict.toList templates))
         ]
-
 
 
 sortByEntity : Rule -> Rule -> Order
