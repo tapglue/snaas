@@ -113,7 +113,7 @@ update msg model =
             ( model, guardConfirm "You want to deactivate this rule?" (deactivateRule RuleDeactivate model.appId id) )
 
         RuleDeleteAsk id ->
-            ( model, guardConfirm "You want to delete this rule?" (Cmd.map RuleDelete (deleteRule model.appId id)) )
+            ( model, guardConfirm "You want to delete this rule?" (deleteRule RuleDelete model.appId id) )
 
         RuleDelete _ ->
             ( model, Cmd.map LocationChange (Route.navigate (Route.Rules model.appId)) )

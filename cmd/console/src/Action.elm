@@ -30,6 +30,6 @@ type Msg
     | RuleDeactivate (Result Http.Error String)
     | RuleDeactivateAsk String
     | RuleDeleteAsk String
-    | RuleDelete (WebData Bool)
+    | RuleDelete (Result Http.Error ())
     | Tick Time
     | TokenPersist String

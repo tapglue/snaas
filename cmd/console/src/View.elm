@@ -18,9 +18,15 @@ import Member.Model exposing (Member)
 import Model exposing (Model, isLoggedIn)
 import Route
 import Rule.Model exposing (Rule)
-import Rule.View exposing (viewRuleDescription, viewRuleItem, viewRuleTable)
+import Rule.View exposing (viewRule, viewRuleItem, viewRuleTable)
 
 
+
+
+view : Model -> Html Msg
+view model =
+    div [ class "content" ]
+        ([ viewHeader model ] ++ [ getPage model ] ++ [ viewFooter model ])
 
 
 getPage : Model -> Html Msg
@@ -60,12 +66,6 @@ getPage model =
         pageLogin model
     else
         pageGuard model
-
-
-view : Model -> Html Msg
-view model =
-    div [ class "content" ]
-        ([ viewHeader model ] ++ [ getPage model ] ++ [ viewFooter model ])
 
 
 pageApp : Model -> Html Msg
@@ -198,44 +198,6 @@ pageNotFound =
 pageRule : Model -> Html Msg
 pageRule { app, appId, rule, startTime, time } =
     let
-        viewTarget target =
-            div [ class "target" ]
-                [ span [] [ text "Target: " ]
-                , strong [] [ text (Rule.Model.targetString target) ]
-                ]
-
-        viewTemplate ( lang, template ) =
-            tr []
-                [ td [] [ text lang ]
-                , td [] [ text template ]
-                ]
-
-        viewTemplates templates =
-            table []
-                [ thead []
-                    [ tr []
-                        [ th [] [ text "lang" ]
-                        , th [] [ text "template" ]
-                        ]
-                    ]
-                , tbody [] (List.map viewTemplate (Dict.toList templates))
-                ]
-
-        viewRecipient recipient =
-            div [ class "recipient" ]
-                [ div [ class "meta" ]
-                    ((List.map viewTarget recipient.targets)
-                        ++ [ div [ class "urn" ]
-                                [ span [] [ text "URN: " ]
-                                , pre [] [ text recipient.urn ]
-                                ]
-                           ]
-                    )
-                , div [ class "templates" ]
-                    [ viewTemplates recipient.templates
-                    ]
-                ]
-
         viewActiveAction rule =
             if rule.active then
                 li []
@@ -269,16 +231,6 @@ pageRule { app, appId, rule, startTime, time } =
                     ]
                 ]
 
-        viewRule rule =
-            div []
-                [ viewActions rule
-                , viewRuleDescription rule
-                , h4 []
-                    [ span [ class "icon nc-icon-outline users_mobile-contact" ] []
-                    , span [] [ text "Recipients" ]
-                    ]
-                , div [ class "recipients" ] (List.map viewRecipient rule.recipients)
-                ]
     in
         div []
             [ viewContextApps app
