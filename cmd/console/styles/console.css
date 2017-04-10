@@ -243,6 +243,7 @@ header section.profile h4 img.profile {
 	border-radius: 50%;
 	border: 0.1rem solid rgb(36, 56, 60);
 	box-shadow: 0.1rem 0.1rem 0.1rem 0.1rem rgba(63, 91, 96, 1);
+	height: 3.2rem;
 	margin-right: 0.6rem;
 	width: 3.2rem;
 }
@@ -301,12 +302,12 @@ section#dashboard h2 span.zone {
 	text-decoration: underline;
 }
 
-section#entities {
+section.actions {
 	border-bottom: 0.1rem solid rgb(63, 91, 96);
 	border-top: 0.1rem solid rgb(63, 91, 96);
 }
 
-section#entities ul {
+section.actions ul {
     display: flex;
     flex: 1 1 auto;
     flex-direction: row;
@@ -316,43 +317,43 @@ section#entities ul {
 	padding: 0;
 }
 
-section#entities ul li {
+section.actions ul li {
 	border-left: 0.1rem solid rgb(63, 91, 96);
 }
 
-section#entities ul li:last-child {
+section.actions ul li:last-child {
 	border-right: 0.1rem solid rgb(63, 91, 96);
 }
 
-section#entities ul li a {
+section.actions ul li a {
 	display: flex;
 	padding: 1.6rem 1.2rem 1rem 1.2rem;
 	transition: all 0.15s ease;
 }
 
-section#entities ul li a:hover {
+section.actions ul li a:hover {
 	background: rgb(63, 91, 96);
 }
 
-section#entities ul li a * {
+section.actions ul li a * {
 	color: rgb(63, 91, 96);
 }
 
-section#entities ul li a:hover * {
+section.actions ul li a:hover * {
 	color: rgb(245, 245, 245);
 }
 
-section#entities ul li a div.icon {
+section.actions ul li a div.icon {
 	font-size: 4rem;
 	margin-right: 0.6rem;
 }
 
-section#entities ul li a div.count {
+section.actions ul li a div.count {
 	font-size: 2rem;
 	font-weight: 700;
 }
 
-section#entities ul li a div.name {
+section.actions ul li a div.name {
 	font-size: 2.2rem;
 }
 
@@ -407,7 +408,7 @@ table.navigation tbody tr:hover {
 	background: rgb(236, 240, 241);
 }
 
-ul.actions {
+/*ul.actions {
 	display: flex;
 	justify-content: flex-end;
 	padding: 0;
@@ -424,3 +425,4 @@ ul.actions li {
 ul.actions li span.icon {
 	margin-right: 0.4rem;
 }
+*/

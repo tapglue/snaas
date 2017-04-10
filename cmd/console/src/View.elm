@@ -2,7 +2,6 @@ module View exposing (view)
 
 import Char
 import Color exposing (rgb)
-import Dict
 import Html exposing (..)
 import Html.Attributes exposing (class, href, id, placeholder, src, title, type_, value)
 import Html.Events exposing (onBlur, onClick, onFocus, onInput, onSubmit)
@@ -72,7 +71,7 @@ pageApp { app, startTime, time } =
         viewEntities data =
             case data of
                 Success app ->
-                    ul [ class "entities" ]
+                    ul []
                         (List.map viewEntity
                             [ ( app.counts.comments, "Comments", "ui-2_chat-content", (Navigate Route.Members) )
                             , ( app.counts.connections, "Connections", "arrows-2_conversion", (Navigate Route.Members) )
@@ -98,7 +97,7 @@ pageApp { app, startTime, time } =
             [ viewContextApps app
             , Container.view (section [ class "highlight" ])
                 [ viewWebData viewApp startTime time app ]
-            , Container.view (section [ id "entities" ])
+            , Container.view (section [ class "actions" ])
                 [ viewEntities app
                 ]
             ]
@@ -192,46 +191,80 @@ pageNotFound =
         [ h3 [] [ text "Looks like we couldn't find the page you were looking for." ]
         ]
 
+viewAction : ( Msg, String, Maybe Int, String ) -> Html Msg
+viewAction ( msg, icon, _, name ) =
+    li []
+        [ a [ onClick msg ]
+            [ div [ class ("icon nc-icon-glyph " ++ icon) ] []
+            , div [ class "name" ] [ text name ]
+            ]
+        ]
+
+viewActions : List ( Msg, String, Maybe Int, String ) -> Html Msg
+viewActions actions =
+    Container.view (section [ class "actions" ])
+        [ ul [] (List.map viewAction actions)
+        ]
+
 
 pageRule : Model -> Html Msg
 pageRule { app, appId, rule, startTime, time } =
     let
-        viewActiveAction rule =
-            if rule.active then
-                li []
-                    [ a [ onClick (RuleDeactivateAsk rule.id) ]
-                        [ span [ class "icon nc-icon-glyph ui-1_circle-remove" ] []
-                        , span [] [ text "deactivate" ]
+        actions =
+            case rule of
+                Success rule ->
+                    viewActions
+                        [ ( (RuleDeleteAsk rule.id), "ui-1_edit-76", Nothing, "edit" )
+                        , ( (RuleDeleteAsk rule.id), "ui-1_trash", Nothing, "delete" )
                         ]
-                    ]
-            else
-                li []
-                    [ a [ onClick (RuleActivateAsk rule.id) ]
-                        [ span [ class "icon nc-icon-glyph ui-1_check-circle-08" ] []
-                        , span [] [ text "activate" ]
-                        ]
-                    ]
 
-        viewActions rule =
-            ul [ class "actions" ]
-                [ viewActiveAction rule
-                , li []
-                    [ a []
-                        [ span [ class "icon nc-icon-glyph ui-1_edit-76" ] []
-                        , span [] [ text "edit" ]
-                        ]
-                    ]
-                , li []
-                    [ a [ onClick (RuleDeleteAsk rule.id) ]
-                        [ span [ class "icon nc-icon-glyph ui-1_trash" ] []
-                        , span [] [ text "delete" ]
-                        ]
-                    ]
-                ]
+                _ ->
+                    ul [] []
+
+        --viewActiveAction rule =
+        --    if rule.active then
+        --        li []
+        --            [ a [ onClick (RuleDeactivateAsk rule.id) ]
+        --                [ span [ class "icon nc-icon-glyph ui-1_circle-remove" ] []
+        --                , span [] [ text "deactivate" ]
+        --                ]
+        --            ]
+        --    else
+        --        li []
+        --            [ a [ onClick (RuleActivateAsk rule.id) ]
+        --                [ span [ class "icon nc-icon-glyph ui-1_check-circle-08" ] []
+        --                , span [] [ text "activate" ]
+        --                ]
+        --            ]
+
+        --viewActions rule =
+        --    case rule of
+        --        Success rule ->
+        --            ul []
+        --                [ viewActiveAction rule
+        --                , li []
+        --                    [ a []
+        --                        [ div [ class "icon nc-icon-glyph ui-1_edit-76" ] []
+        --                        , div [ class "name" ] [ text "edit" ]
+        --                        ]
+        --                    ]
+        --                , li []
+        --                    [ a [ onClick (RuleDeleteAsk rule.id) ]
+        --                        [ div [ class "icon nc-icon-glyph ui-1_trash" ] []
+        --                        , div [ class "name" ] [ text "delete" ]
+        --                        ]
+        --                    ]
+        --                ]
+
+        --        _ ->
+        --            ul [] []
+
     in
         div []
             [ viewContextApps app
             , viewContextRules appId rule
+            , actions
+            --, Container.view (section [ class "actions" ]) [ (viewActions rule) ]
             , Container.view (section [ class "highlight" ]) [ (viewWebData viewRule startTime time rule) ]
             ]
 
