@@ -6,8 +6,6 @@ import (
 	"text/template"
 	"time"
 
-	"golang.org/x/text/language"
-
 	serr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/service/app"
 	"github.com/tapglue/snaas/service/connection"
@@ -30,7 +28,7 @@ const (
 // Message is the envelope which holds the templated message produced by a
 // Pipeline together with the recipient and the URN to deliver with it.
 type Message struct {
-	Message   string
+	Messages  map[string]string
 	Recipient uint64
 	URN       string
 }
@@ -82,35 +80,54 @@ func PipelineConnection(users user.Service) PipelineConnectionFunc {
 			To:         to,
 		}
 
-		for _, r := range rules {
-			if !r.Criteria.Match(change) {
+		for _, currentRule := range rules {
+			if !currentRule.Criteria.Match(change) {
 				continue
 			}
 
-			for _, recipient := range r.Recipients {
-				rs, err := recipientsConnection()(currentApp, context, recipient.Query)
+			for _, recipient := range currentRule.Recipients {
+				cs, err := recipientsConnection()(currentApp, context, recipient.Query)
 				if err != nil {
 					return nil, err
 				}
 
-				for _, r := range rs {
-					urn, err := compileTemplate(context, recipient.URN)
+				for _, c := range cs {
+					msg, err := compileMessage(context, recipient, c)
 					if err != nil {
 						return nil, err
 					}
 
-					msg, err := compileTemplate(context, recipient.Templates[language.English.String()])
-					if err != nil {
-						return nil, err
-					}
-
-					ms = append(ms, &Message{Message: msg, Recipient: r.ID, URN: urn})
+					ms = append(ms, msg)
 				}
 			}
 		}
 
 		return ms, nil
 	}
+}
+
+func compileMessage(
+	context interface{},
+	recipient rule.Recipient,
+	target *user.User,
+) (*Message, error) {
+	urn, err := compileTemplate(context, recipient.URN)
+	if err != nil {
+		return nil, err
+	}
+
+	msgs := map[string]string{}
+
+	for lang, tmpl := range recipient.Templates {
+		msg, err := compileTemplate(context, tmpl)
+		if err != nil {
+			return nil, err
+		}
+
+		msgs[lang] = msg
+	}
+
+	return &Message{Messages: msgs, Recipient: target.ID, URN: urn}, nil
 }
 
 // PipelineEventFunc constructs a Pipeline that by applying the provided rules
@@ -166,29 +183,24 @@ func PipelineEvent(
 			ParentOwner: parentOwner,
 		}
 
-		for _, r := range rules {
-			if !r.Criteria.Match(change) {
+		for _, currentRule := range rules {
+			if !currentRule.Criteria.Match(change) {
 				continue
 			}
 
-			for _, recipient := range r.Recipients {
+			for _, recipient := range currentRule.Recipients {
 				rs, err := recipientsEvent()(currentApp, context, recipient.Query)
 				if err != nil {
 					return nil, err
 				}
 
 				for _, r := range rs {
-					urn, err := compileTemplate(context, recipient.URN)
+					msg, err := compileMessage(context, recipient, r)
 					if err != nil {
 						return nil, err
 					}
 
-					msg, err := compileTemplate(context, recipient.Templates[language.English.String()])
-					if err != nil {
-						return nil, err
-					}
-
-					ms = append(ms, &Message{Message: msg, Recipient: r.ID, URN: urn})
+					ms = append(ms, msg)
 				}
 			}
 		}
@@ -261,12 +273,12 @@ func PipelineObject(
 			ParentOwner: parentOwner,
 		}
 
-		for _, r := range rules {
-			if !r.Criteria.Match(change) {
+		for _, currentRule := range rules {
+			if !currentRule.Criteria.Match(change) {
 				continue
 			}
 
-			for _, recipient := range r.Recipients {
+			for _, recipient := range currentRule.Recipients {
 				rs, err := recipientsObject(
 					connections,
 					objects,
@@ -277,17 +289,12 @@ func PipelineObject(
 				}
 
 				for _, r := range rs {
-					urn, err := compileTemplate(context, recipient.URN)
+					msg, err := compileMessage(context, recipient, r)
 					if err != nil {
 						return nil, err
 					}
 
-					msg, err := compileTemplate(context, recipient.Templates[language.English.String()])
-					if err != nil {
-						return nil, err
-					}
-
-					ms = append(ms, &Message{Message: msg, Recipient: r.ID, URN: urn})
+					ms = append(ms, msg)
 				}
 			}
 		}
@@ -349,29 +356,24 @@ func PipelineReaction(
 			Reaction:    r,
 		}
 
-		for _, r := range rules {
-			if !r.Criteria.Match(change) {
+		for _, currentRule := range rules {
+			if !currentRule.Criteria.Match(change) {
 				continue
 			}
 
-			for _, recipient := range r.Recipients {
+			for _, recipient := range currentRule.Recipients {
 				rs, err := recipientsReaction()(currentApp, context, recipient.Query)
 				if err != nil {
 					return nil, err
 				}
 
 				for _, r := range rs {
-					urn, err := compileTemplate(context, recipient.URN)
+					msg, err := compileMessage(context, recipient, r)
 					if err != nil {
 						return nil, err
 					}
 
-					msg, err := compileTemplate(context, recipient.Templates[language.English.String()])
-					if err != nil {
-						return nil, err
-					}
-
-					ms = append(ms, &Message{Message: msg, Recipient: r.ID, URN: urn})
+					ms = append(ms, msg)
 				}
 			}
 		}

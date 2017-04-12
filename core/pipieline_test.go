@@ -6,12 +6,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/tapglue/snaas/service/reaction"
+	"golang.org/x/text/language"
 
 	"github.com/tapglue/snaas/service/app"
 	"github.com/tapglue/snaas/service/connection"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
+	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/rule"
 	"github.com/tapglue/snaas/service/user"
 )
@@ -98,7 +99,9 @@ func TestPipelineConnectionCondFrom(t *testing.T) {
 
 	want := Messages{
 		{
-			Message:   fmt.Sprintf("%s accepted your friend request", target.Username),
+			Messages: map[string]string{
+				language.English.String(): fmt.Sprintf("%s accepted your friend request", target.Username),
+			},
 			Recipient: origin.ID,
 			URN:       fmt.Sprintf("tapglue/users/%d", target.ID),
 		},
@@ -176,7 +179,9 @@ func TestPipelineConnectionCondTo(t *testing.T) {
 
 	want := Messages{
 		{
-			Message:   fmt.Sprintf("%s sent you a friend request", origin.Username),
+			Messages: map[string]string{
+				language.English.String(): fmt.Sprintf("%s sent you a friend request", origin.Username),
+			},
 			Recipient: target.ID,
 			URN:       fmt.Sprintf("tapglue/users/%d", origin.ID),
 		},
@@ -256,7 +261,9 @@ func TestPipelineReactionCondParentOwner(t *testing.T) {
 
 	want := Messages{
 		{
-			Message:   fmt.Sprintf("%s liked your post", liker.Username),
+			Messages: map[string]string{
+				language.English.String(): fmt.Sprintf("%s liked your post", liker.Username),
+			},
 			Recipient: postOwner.ID,
 			URN:       fmt.Sprintf("tapglue/users/%d", liker.ID),
 		},
@@ -268,11 +275,6 @@ func TestPipelineReactionCondParentOwner(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(have, want) {
-		for i, m := range have {
-			fmt.Printf("[%d|%s] %v\n", m.Recipient, m.URN, m.Message[i])
-			fmt.Printf("[%d|%s] %v\n\n", want[i].Recipient, want[i].URN, want[i].Message)
-		}
-
 		t.Errorf("have %#v, want %#v", have, want)
 	}
 }
@@ -344,7 +346,9 @@ func TestPipelineEventCondParentOwner(t *testing.T) {
 
 	want := Messages{
 		{
-			Message:   fmt.Sprintf("%s liked your post", liker.Username),
+			Messages: map[string]string{
+				language.English.String(): fmt.Sprintf("%s liked your post", liker.Username),
+			},
 			Recipient: postOwner.ID,
 			URN:       fmt.Sprintf("tapglue/users/%d", liker.ID),
 		},
@@ -356,11 +360,6 @@ func TestPipelineEventCondParentOwner(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(have, want) {
-		for i, m := range have {
-			fmt.Printf("[%d|%s] %s\n", m.Recipient, m.URN, m.Message)
-			fmt.Printf("[%d|%s] %s\n\n", want[i].Recipient, want[i].URN, want[i].Message)
-		}
-
 		t.Errorf("have %#v, want %#v", have, want)
 	}
 }
@@ -452,13 +451,17 @@ func TestPipelineObjectCondFriends(t *testing.T) {
 	want := Messages{
 		{
 			Recipient: friend2.ID,
-			Message:   fmt.Sprintf("%s just added a review", postOwner.Username),
-			URN:       fmt.Sprintf("tapglue/posts/%d", post.ID),
+			Messages: map[string]string{
+				language.English.String(): fmt.Sprintf("%s just added a review", postOwner.Username),
+			},
+			URN: fmt.Sprintf("tapglue/posts/%d", post.ID),
 		},
 		{
 			Recipient: friend1.ID,
-			Message:   fmt.Sprintf("%s just added a review", postOwner.Username),
-			URN:       fmt.Sprintf("tapglue/posts/%d", post.ID),
+			Messages: map[string]string{
+				language.English.String(): fmt.Sprintf("%s just added a review", postOwner.Username),
+			},
+			URN: fmt.Sprintf("tapglue/posts/%d", post.ID),
 		},
 	}
 
@@ -556,13 +559,17 @@ func TestPipelineObjectCondObjectOwner(t *testing.T) {
 	want := Messages{
 		{
 			Recipient: commenter2.ID,
-			Message:   fmt.Sprintf("%s also commented on %ss post", commenter3.Username, postOwner.Username),
-			URN:       fmt.Sprintf("tapglue/posts/%d/comments/%d", post.ID, comment3.ID),
+			Messages: map[string]string{
+				language.English.String(): fmt.Sprintf("%s also commented on %ss post", commenter3.Username, postOwner.Username),
+			},
+			URN: fmt.Sprintf("tapglue/posts/%d/comments/%d", post.ID, comment3.ID),
 		},
 		{
 			Recipient: commenter1.ID,
-			Message:   fmt.Sprintf("%s also commented on %ss post", commenter3.Username, postOwner.Username),
-			URN:       fmt.Sprintf("tapglue/posts/%d/comments/%d", post.ID, comment3.ID),
+			Messages: map[string]string{
+				language.English.String(): fmt.Sprintf("%s also commented on %ss post", commenter3.Username, postOwner.Username),
+			},
+			URN: fmt.Sprintf("tapglue/posts/%d/comments/%d", post.ID, comment3.ID),
 		},
 	}
 
@@ -636,8 +643,10 @@ func TestPipelineObjectCondOwner(t *testing.T) {
 	want := Messages{
 		{
 			Recipient: postOwner.ID,
-			Message:   fmt.Sprintf("%s commented on your post", commenter.Username),
-			URN:       fmt.Sprintf("tapglue/posts/%d/comments/%d", post.ID, comment.ID),
+			Messages: map[string]string{
+				language.English.String(): fmt.Sprintf("%s commented on your post", commenter.Username),
+			},
+			URN: fmt.Sprintf("tapglue/posts/%d/comments/%d", post.ID, comment.ID),
 		},
 	}
 
@@ -651,11 +660,6 @@ func TestPipelineObjectCondOwner(t *testing.T) {
 	}
 
 	if !reflect.DeepEqual(have, want) {
-		for i, m := range have {
-			fmt.Printf("[%d|%s] %s\n", m.Recipient, m.URN, m.Message)
-			fmt.Printf("[%d|%s] %s\n\n", want[i].Recipient, want[i].URN, want[i].Message)
-		}
-
 		t.Errorf("have %#v, want %#v", have, want)
 	}
 }
