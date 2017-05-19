@@ -5,6 +5,7 @@ resource "aws_db_subnet_group" "service" {
   subnet_ids = [
     "${aws_subnet.platform-a.id}",
     "${aws_subnet.platform-b.id}",
+    "${aws_subnet.platform-peering.id}",
   ]
 }
 

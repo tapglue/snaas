@@ -99,6 +99,16 @@ resource "aws_subnet" "platform-b" {
   }
 }
 
+resource "aws_subnet" "platform-peering" {
+  availability_zone = "${var.region}a"
+  cidr_block        = "10.0.18.0/23"
+  vpc_id            = "${aws_vpc.env.id}"
+
+  tags {
+    Name = "platform-peering"
+  }
+}
+
 resource "aws_route_table" "platform" {
   vpc_id = "${aws_vpc.env.id}"
 
