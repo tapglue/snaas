@@ -1,11 +1,16 @@
 package main
 
 import (
+	"golang.org/x/text/language"
+
 	"github.com/tapglue/snaas/core"
 	serr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/sns"
 	"github.com/tapglue/snaas/service/app"
+	"github.com/tapglue/snaas/service/device"
 )
+
+var languageDefault = language.English
 
 type channelFunc func(*app.App, *core.Message) error
 
@@ -43,7 +48,7 @@ func channelPush(
 				return err
 			}
 
-			err = push(d.Platform, d.EndpointARN, p.Scheme, msg.URN, msg.Message)
+			err = push(d.Platform, d.EndpointARN, p.Scheme, msg.URN, localiseMessage(d, msg.Messages))
 			if err != nil {
 				if sns.IsDeliveryFailure(err) {
 					return nil
@@ -55,4 +60,23 @@ func channelPush(
 
 		return nil
 	}
+}
+
+func localiseMessage(d *device.Device, msgs map[string]string) string {
+	t, err := language.Parse(d.Language)
+	if err == nil {
+		b, _ := t.Base()
+
+		msg, ok := msgs[b.String()]
+		if ok {
+			return msg
+		}
+	}
+
+	defaultMsg, ok := msgs[languageDefault.String()]
+	if ok {
+		return defaultMsg
+	}
+
+	return ""
 }
