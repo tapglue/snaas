@@ -228,12 +228,18 @@ func DeviceUpdate(devices device.Service) DeviceUpdateFunc {
 		d := &device.Device{}
 
 		for _, dev := range ds {
-			if dev.DeviceID == deviceID && dev.Token == token {
-				return nil
+			if dev.UserID != origin.UserID {
+				d = dev
+				break
 			}
 
 			if dev.DeviceID == deviceID || dev.Token == token {
 				d = dev
+				break
+			}
+
+			if dev.DeviceID == deviceID && dev.Token == token {
+				return nil
 			}
 		}
 
