@@ -25,7 +25,8 @@ const (
 			endpoint_arn = $5,
 			language = $6,
 			token = $7,
-			updated_at = $8
+			user_id = $8,
+			updated_at = $9
 		WHERE
 			id = $1`
 
@@ -182,6 +183,7 @@ func (s *pgService) Put(ns string, d *Device) (*Device, error) {
 			d.EndpointARN,
 			d.Language,
 			d.Token,
+			d.UserID,
 			d.UpdatedAt,
 		}
 		query = fmt.Sprintf(pgUpdateDevice, ns)
