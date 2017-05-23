@@ -24,9 +24,10 @@ const (
 			disabled = $4,
 			endpoint_arn = $5,
 			language = $6,
-			token = $7,
-			user_id = $8,
-			updated_at = $9
+			platform = $7,
+			token = $8,
+			user_id = $9,
+			updated_at = $10
 		WHERE
 			id = $1`
 
@@ -182,6 +183,7 @@ func (s *pgService) Put(ns string, d *Device) (*Device, error) {
 			d.Disabled,
 			d.EndpointARN,
 			d.Language,
+			d.Platform,
 			d.Token,
 			d.UserID,
 			d.UpdatedAt,
