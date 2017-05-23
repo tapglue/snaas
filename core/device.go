@@ -225,7 +225,7 @@ func DeviceUpdate(devices device.Service) DeviceUpdateFunc {
 
 		ds = append(ds, ts...)
 
-		d := &device.Device{}
+		var old *device.Device
 
 		for _, dev := range ds {
 			if dev.DeviceID == deviceID &&
@@ -237,16 +237,23 @@ func DeviceUpdate(devices device.Service) DeviceUpdateFunc {
 			}
 
 			if dev.Token == token {
-				d = dev
+				old = dev
 			}
 		}
 
-		d.DeviceID = deviceID
-		d.Disabled = false
-		d.Language = language
-		d.Platform = platform
-		d.Token = token
-		d.UserID = origin.UserID
+		d := &device.Device{
+			DeviceID: deviceID,
+			Disabled: false,
+			Language: language,
+			Platform: platform,
+			Token:    token,
+			UserID:   origin.UserID,
+		}
+
+		if old != nil {
+			d.EndpointARN = ""
+			d.ID = old.ID
+		}
 
 		_, err = devices.Put(currentApp.Namespace(), d)
 		if err != nil {
