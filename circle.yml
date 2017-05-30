@@ -25,7 +25,7 @@ database:
 test:
   override:
     - ./infrastructure/scripts/execute-go-tests
-    - ./infrastructure/scripts/execute-elm-tests
+    # - ./infrastructure/scripts/execute-elm-tests
 deployment:
   docker:
     branch: master
