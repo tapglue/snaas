@@ -200,7 +200,8 @@ func DeviceUpdate(devices device.Service) DeviceUpdateFunc {
 	) error {
 		// Get user devices.
 		ds, err := devices.Query(currentApp.Namespace(), device.QueryOptions{
-			Deleted: &defaultDeleted,
+			Deleted:  &defaultDeleted,
+			Disabled: &defaultDeleted,
 			Platforms: []sns.Platform{
 				platform,
 			},
