@@ -36,16 +36,17 @@ import (
 
 // Logging and telemetry identifiers.
 const (
-	component           = "gateway-http"
-	namespaceCache      = "cache"
-	namespaceService    = "service"
-	namespaceSource     = "source"
-	subsystemHit        = "hit"
-	subsystemQueue      = "queue"
-	serviceEventCounts  = "event_counts"
-	serviceObjectCounts = "object_counts"
-	storeCache          = "redis"
-	storeService        = "postgres"
+	component             = "gateway-http"
+	namespaceCache        = "cache"
+	namespaceService      = "service"
+	namespaceSource       = "source"
+	subsystemHit          = "hit"
+	subsystemQueue        = "queue"
+	serviceEventCounts    = "event_counts"
+	serviceObjectCounts   = "object_counts"
+	serviceReactionCounts = "reaction_counts"
+	storeCache            = "redis"
+	storeService          = "postgres"
 )
 
 // Versions.
@@ -219,6 +220,18 @@ func main() {
 		cacheOpLatency,
 	)(objectCountsCache)
 
+	var reactionCountsCache cache.CountService
+	reactionCountsCache = cache.RedisCountService(redisPool)
+	reactionCountsCache = cache.InstrumentCountServiceMiddleware(
+		component,
+		serviceReactionCounts,
+		storeCache,
+		cacheErrCount,
+		cacheHitCount,
+		cacheOpCount,
+		cacheOpLatency,
+	)(reactionCountsCache)
+
 	// Setup sources.
 	var (
 		conSource      connection.Source
@@ -353,8 +366,7 @@ func main() {
 	// Combine event service and source.
 	events = event.SourcingServiceMiddleware(eventSource)(events)
 	// Wrap service with caching.
-	// TODO: Implement write path to avoid stale counts.
-	// events = event.CacheServiceMiddleware(eventCountsCache)(events)
+	events = event.CacheServiceMiddleware(eventCountsCache)(events)
 
 	var invites invite.Service
 	invites = invite.PostgresService(pgClient)
@@ -380,8 +392,7 @@ func main() {
 	// Combine object service and source.
 	objects = object.SourcingServiceMiddleware(objectSource)(objects)
 	// Wrap service with caching
-	// TODO: Implement write path to avoid stale counts.
-	// objects = object.CacheServiceMiddleware(objectCountsCache)(objects)
+	objects = object.CacheServiceMiddleware(objectCountsCache)(objects)
 
 	var reactions reaction.Service
 	reactions = reaction.PostgresService(pgClient)
@@ -395,6 +406,7 @@ func main() {
 	reactions = reaction.LogServiceMiddleware(logger, storeService)(reactions)
 	// Combine reaction service and source.
 	reactions = reaction.SourcingServiceMiddleware(reactionSource)(reactions)
+	reactions = reaction.CacheServiceMiddleware(reactionCountsCache)(reactions)
 
 	var sessions session.Service
 	sessions = session.PostgresService(pgClient)
