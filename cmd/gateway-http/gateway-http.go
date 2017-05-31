@@ -366,7 +366,8 @@ func main() {
 	// Combine event service and source.
 	events = event.SourcingServiceMiddleware(eventSource)(events)
 	// Wrap service with caching.
-	events = event.CacheServiceMiddleware(eventCountsCache)(events)
+	// TODO: Reenable with proper write-through updates.
+	// events = event.CacheServiceMiddleware(eventCountsCache)(events)
 
 	var invites invite.Service
 	invites = invite.PostgresService(pgClient)
@@ -392,7 +393,8 @@ func main() {
 	// Combine object service and source.
 	objects = object.SourcingServiceMiddleware(objectSource)(objects)
 	// Wrap service with caching
-	objects = object.CacheServiceMiddleware(objectCountsCache)(objects)
+	// TODO: Reenable with proper write-through updates.
+	// objects = object.CacheServiceMiddleware(objectCountsCache)(objects)
 
 	var reactions reaction.Service
 	reactions = reaction.PostgresService(pgClient)
@@ -406,7 +408,9 @@ func main() {
 	reactions = reaction.LogServiceMiddleware(logger, storeService)(reactions)
 	// Combine reaction service and source.
 	reactions = reaction.SourcingServiceMiddleware(reactionSource)(reactions)
-	reactions = reaction.CacheServiceMiddleware(reactionCountsCache)(reactions)
+	// Wrap service with caching
+	// TODO: Reenable with proper write-through updates.
+	// reactions = reaction.CacheServiceMiddleware(reactionCountsCache)(reactions)
 
 	var sessions session.Service
 	sessions = session.PostgresService(pgClient)
