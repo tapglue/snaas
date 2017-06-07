@@ -20,7 +20,7 @@ data "template_file" "domain_full" {
 
   vars {
     root = "${element(split(".", var.domain), length(split(".", var.domain)) - 2)}"
-    sub = "${element(split(".", var.domain), length(split(".", var.domain)) - 3)}"
+    sub  = "${element(split(".", var.domain), length(split(".", var.domain)) - 3)}"
     tld  = "${element(split(".", var.domain), length(split(".", var.domain)) - 1)}"
   }
 }

@@ -130,6 +130,50 @@ resource "aws_ecs_task_definition" "gateway-http" {
 EOF
 }
 
+resource "aws_ecs_service" "pganalyze-master" {
+  cluster = "${aws_ecs_cluster.service.id}"
+
+  depends_on = [
+    "aws_iam_instance_profile.ecs-agent-profile",
+    "aws_db_instance.service-master",
+  ]
+
+  deployment_maximum_percent         = 200
+  deployment_minimum_healthy_percent = 100
+  desired_count                      = 1
+  name                               = "pganalyze-master"
+  task_definition                    = "${aws_ecs_task_definition.pganalyze-master.arn}"
+}
+
+resource "aws_ecs_task_definition" "pganalyze-master" {
+  family = "pganalyze-master"
+
+  container_definitions = <<EOF
+[
+  {
+    "cpu": 128,
+    "dnsSearchDomains": [
+      "${var.env}.${var.region}"
+    ],
+    "environment": [
+      { "name": "DB_URL", "value": "postgres://${var.pg_pganalyze_username}:${var.pg_pganalyze_password}@${aws_route53_record.service-master.fqdn}:5432/${var.pg_db_name}?connect_timeout=5&sslmode=require" },
+      { "name": "PGA_API_KEY", "value": "${var.pganalyze_api_key}" },
+      { "name": "AWS_INSTANCE_ID", "value": "service-master" },
+      { "name": "AWS_REGION", "value": "${var.region}" }
+    ],
+    "essential": true,
+    "image": "quay.io/pganalyze/collector:stable",
+    "logConfiguration": {
+      "logDriver": "syslog"
+    },
+    "memory": 128,
+    "name": "pganalyze-master",
+    "readonlyRootFilesystem": true
+  }
+]
+EOF
+}
+
 resource "aws_ecs_service" "sims" {
   cluster = "${aws_ecs_cluster.service.id}"
 

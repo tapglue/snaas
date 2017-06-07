@@ -113,7 +113,8 @@ resource "aws_iam_role_policy" "ecs-agent" {
         "ecr:GetAuthorizationToken",
         "ecr:BatchCheckLayerAvailability",
         "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage"
+        "ecr:BatchGetImage",
+        "rds:DescribeDBInstances"
       ],
       "Resource": [
         "*"

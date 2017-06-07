@@ -121,6 +121,24 @@ variable "pg_password" {
   type        = "string"
 }
 
+variable "pg_pganalyze_username" {
+  default     = "pganalyze"
+  description = "Postgres database username for pganalyze reporting"
+  type        = "string"
+}
+
+variable "pg_pganalyze_password" {
+  default     = ""
+  description = "Postgres database password for pganalyze reporting"
+  type        = "string"
+}
+
+variable "pganalyze_api_key" {
+  default     = ""
+  description = "PGAnalyze API key for database performance reporting"
+  type        = "string"
+}
+
 variable "version" {
   default = {
     "console"      = "351"
