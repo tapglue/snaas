@@ -401,6 +401,7 @@ func UserSearch(
 			Firstnames: t,
 			Lastnames:  t,
 			Limit:      opts.Limit,
+			Query:      query,
 			Usernames:  t,
 		})
 		if err != nil {

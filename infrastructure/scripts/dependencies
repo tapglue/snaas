@@ -8,8 +8,8 @@ sudo curl -sL -o /usr/local/bin/gimme https://raw.githubusercontent.com/travis-c
 sudo chmod +x /usr/local/bin/gimme
 
 echo "|> install Go"
-gimme 1.7.5
-source ~/.gimme/envs/go1.7.5.env
+gimme 1.8.3
+source ~/.gimme/envs/go1.8.3.env
 
 echo "|> install static asset tool"
 go get github.com/mjibson/esc
@@ -39,4 +39,4 @@ cp -R /home/ubuntu/snaas /home/ubuntu/.go_workspace/src/github.com/tapglue/
 
 echo "|> install Go packages"
 cd /home/ubuntu/.go_workspace/src/github.com/tapglue/snaas
-go get -d -v ./...
+go get -d -v -t ./...

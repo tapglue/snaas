@@ -282,6 +282,30 @@ func extractLimit(r *http.Request) (int, error) {
 	return limit, nil
 }
 
+func extractOffsetCursorBefore(r *http.Request) (uint, error) {
+	var (
+		param = r.URL.Query().Get(keyCursorBefore)
+
+		offset uint
+	)
+
+	if param == "" {
+		return offset, nil
+	}
+
+	cursor, err := cursorEncoding.DecodeString(param)
+	if err != nil {
+		return offset, err
+	}
+
+	o, err := strconv.ParseUint(string(cursor), 10, 64)
+	if err != nil {
+		return offset, err
+	}
+
+	return uint(o), nil
+}
+
 func extractReactionType(r *http.Request) (reaction.Type, error) {
 	t, ok := map[string]reaction.Type{
 		"like":  reaction.TypeLike,
@@ -375,6 +399,10 @@ func extractWhereParam(r *http.Request) []string {
 
 func toIDCursor(id uint64) string {
 	return cursorEncoding.EncodeToString([]byte(strconv.FormatUint(id, 10)))
+}
+
+func toOffsetCursor(offset uint) string {
+	return cursorEncoding.EncodeToString([]byte(strconv.FormatUint(uint64(offset), 10)))
 }
 
 func toTimeCursor(t time.Time) string {

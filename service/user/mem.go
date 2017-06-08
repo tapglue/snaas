@@ -1,9 +1,13 @@
 package user
 
 import (
+	"sort"
 	"strings"
 	"time"
 
+	"github.com/arbovm/levenshtein"
+
+	serr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/flake"
 )
 
@@ -103,17 +107,33 @@ func (s *memService) Search(ns string, opts QueryOptions) (List, error) {
 		return nil, err
 	}
 
-	sOpts := opts
+	if opts.Query == "" {
+		return nil, serr.Wrap(serr.ErrInvalidQuery, "param is empty")
+	}
 
-	opts.Emails = nil
-	opts.Firstnames = nil
-	opts.Lastnames = nil
-	opts.Usernames = nil
+	us := s.users[ns].ToList()
 
-	us := filterList(s.users[ns].ToList(), opts)
-	us = searchUsers(us, sOpts)
+	sort.SliceStable(us, func(i, j int) bool {
+		return levenshtein.Distance(opts.Query, us[i].Username) < levenshtein.Distance(opts.Query, us[j].Username)
+	})
 
-	return us, nil
+	fs := List{}
+
+	for _, u := range us {
+		if levenshtein.Distance(opts.Query, u.Username) < 8 {
+			fs = append(fs, u)
+		}
+	}
+
+	if int(opts.Offset) > len(us) {
+		return List{}, nil
+	}
+
+	if opts.Limit == 0 && opts.Offset == 0 {
+		return us, nil
+	}
+
+	return us[int(opts.Offset) : int(opts.Offset)+opts.Limit], nil
 }
 
 func (s *memService) Setup(ns string) error {
@@ -239,21 +259,4 @@ func inTypes(ty string, ts []string) bool {
 	}
 
 	return keep
-}
-
-func searchUsers(is List, opts QueryOptions) List {
-	us := List{}
-
-	for _, u := range is {
-		if !contains(u.Email, opts.Emails...) ||
-			!contains(u.Firstname, opts.Firstnames...) ||
-			!contains(u.Lastname, opts.Lastnames...) ||
-			!contains(u.Username, opts.Usernames...) {
-			continue
-		}
-
-		us = append(us, u)
-	}
-
-	return us
 }

@@ -45,12 +45,15 @@ const (
 	pgClauseSearchEmail     = `(json_data->>'email')::TEXT ILIKE '%%%s%%'`
 	pgClauseSearchFirstname = `(json_data->>'first_name')::TEXT ILIKE '%%%s%%'`
 	pgClauseSearchLastname  = `(json_data->>'last_name')::TEXT ILIKE '%%%s%%'`
-	pgClauseSearchUsername  = `(json_data->>'user_name')::TEXT ILIKE '%%%s%%'`
+
+	pgClauseDistanceUsername = `(json_data->>'user_name')::TEXT % ?`
 
 	pgOrderCreatedAt = `json_data->>'created_at' DESC`
 	pgOrderFirstname = `json_data->>'first_name' ASC`
 	pgOrderLastname  = `json_data->>'first_naem' ASC`
 	pgOrderUsername  = `json_data->>'user_name' ASC`
+
+	pgOrderDistanceUsername = `(json_data->>'user_name')::TEXT <-> ? ASC`
 
 	pgCountUsers = `SELECT count(json_data) FROM %s.users
 		%s`
@@ -91,6 +94,15 @@ const (
 				((json_data->>'last_name')::TEXT) gin_trgm_ops,
 				((json_data->>'user_name')::TEXT) gin_trgm_ops
 			)
+		WHERE
+			(json_data->>'enabled')::BOOL = true`
+	pgIndexSearchUsername = `
+		CREATE INDEX
+			%s
+		ON
+			%s.users
+		USING
+			GIST (((json_data->>'user_name')::TEXT) gist_trgm_ops)
 		WHERE
 			(json_data->>'enabled')::BOOL = true`
 	pgIndexUsername = `
@@ -233,6 +245,7 @@ func (s *pgService) Setup(ns string) error {
 		pg.GuardIndex(ns, "user_email", pgIndexEmail),
 		pg.GuardIndex(ns, "user_id", pgIndexID),
 		pg.GuardIndex(ns, "user_search", pgIndexSearch),
+		pg.GuardIndex(ns, "user_search_username", pgIndexSearchUsername),
 		pg.GuardIndex(ns, "user_username", pgIndexUsername),
 	}
 
@@ -479,35 +492,8 @@ func convertSearchOpts(opts QueryOptions) (string, []interface{}, error) {
 		params  = []interface{}{}
 	)
 
-	if opts.Before > 0 {
-		clauses = append(clauses, pgClauseBefore)
-		params = append(params, opts.Before)
-	}
-
-	if len(opts.CustomIDs) > 0 {
-		ps := []interface{}{}
-
-		for _, id := range opts.CustomIDs {
-			ps = append(ps, id)
-		}
-
-		clause, _, err := sqlx.In(pgClauseCustomIDs, ps)
-		if err != nil {
-			return "", nil, err
-		}
-
-		clauses = append(clauses, clause)
-		params = append(params, ps...)
-	}
-
-	if opts.Deleted != nil {
-		clause, _, err := sqlx.In(pgClauseDeleted, []interface{}{*opts.Deleted})
-		if err != nil {
-			return "", nil, err
-		}
-
-		clauses = append(clauses, clause)
-		params = append(params, *opts.Deleted)
+	if opts.Query == "" {
+		return "", nil, serr.Wrap(serr.ErrInvalidQuery, "param is empty")
 	}
 
 	if opts.Enabled != nil {
@@ -520,90 +506,44 @@ func convertSearchOpts(opts QueryOptions) (string, []interface{}, error) {
 		params = append(params, *opts.Enabled)
 	}
 
-	if len(opts.IDs) > 0 {
-		ps := []interface{}{}
-
-		for _, id := range opts.IDs {
-			ps = append(ps, id)
-		}
-
-		clause, _, err := sqlx.In(pgClauseIDs, ps)
-		if err != nil {
-			return "", nil, err
-		}
-
-		clauses = append(clauses, clause)
-		params = append(params, ps...)
+	clause, _, err := sqlx.In(pgClauseDistanceUsername, []interface{}{opts.Query})
+	if err != nil {
+		return "", nil, err
 	}
 
-	if opts.SocialIDs != nil {
-		for platform, ids := range opts.SocialIDs {
-			ps := []interface{}{}
-
-			for _, id := range ids {
-				ps = append(ps, id)
-			}
-
-			clause, _, err := sqlx.In(fmt.Sprintf(pgClauseSocialIDs, platform), ps)
-			if err != nil {
-				return "", nil, err
-			}
-
-			clauses = append(clauses, clause)
-			params = append(params, ps...)
-		}
-	}
-
-	var (
-		sClauses = []string{}
-	)
-
-	for _, t := range opts.Emails {
-		t = strings.Replace(t, "'", "''", -1)
-		sClauses = append(sClauses, fmt.Sprintf(pgClauseSearchEmail, t))
-	}
-
-	for _, t := range opts.Firstnames {
-		t = strings.Replace(t, "'", "''", -1)
-		sClauses = append(sClauses, fmt.Sprintf(pgClauseSearchFirstname, t))
-	}
-
-	for _, t := range opts.Lastnames {
-		t = strings.Replace(t, "'", "''", -1)
-		sClauses = append(sClauses, fmt.Sprintf(pgClauseSearchLastname, t))
-	}
-
-	for _, t := range opts.Usernames {
-		t = strings.Replace(t, "'", "''", -1)
-		sClauses = append(sClauses, fmt.Sprintf(pgClauseSearchUsername, t))
-	}
-
-	if len(sClauses) > 0 {
-		sClause := fmt.Sprintf("(%s)", strings.Join(sClauses, "\nOR "))
-		clauses = append(clauses, sClause)
-	}
+	clauses = append(clauses, clause)
+	params = append(params, opts.Query)
 
 	query := ""
 
 	if len(clauses) > 0 {
-		query = sqlx.Rebind(sqlx.DOLLAR, pg.ClausesToWhere(clauses...))
+		query = pg.ClausesToWhere(clauses...)
 	}
 
-	if opts.Before > 0 {
-		query = fmt.Sprintf(
-			"%s\nORDER BY %s\n",
-			query,
-			strings.Join([]string{
-				pgOrderUsername,
-				pgOrderFirstname,
-				pgOrderLastname,
-			}, ",\n"),
-		)
+	orderUsername, _, err := sqlx.In(pgOrderDistanceUsername, []interface{}{opts.Query})
+	if err != nil {
+		return "", nil, err
 	}
+
+	params = append(params, opts.Query)
+
+	query = fmt.Sprintf(
+		"%s\nORDER BY %s\n",
+		query,
+		strings.Join([]string{
+			orderUsername,
+		}, ",\n"),
+	)
 
 	if opts.Limit > 0 {
 		query = fmt.Sprintf("%s\nLIMIT %d", query, opts.Limit)
 	}
+
+	if opts.Offset > 0 {
+		query = fmt.Sprintf("%s\nOFFSET %d", query, opts.Offset)
+	}
+
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
 
 	return query, params, nil
 }
