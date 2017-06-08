@@ -31,7 +31,8 @@ var (
 
 // User errors.
 var (
-	ErrUserExists = errors.New("user not unique")
+	ErrInvalidQuery = errors.New("invalid query param")
+	ErrUserExists   = errors.New("user not unique")
 )
 
 // Error wrapper.
@@ -72,6 +73,11 @@ func IsNotFound(err error) bool {
 // IsReactionNotFound indicates if err is ErrReactionNotFound.
 func IsReactionNotFound(err error) bool {
 	return unwrapError(err) == ErrReactionNotFound
+}
+
+// IsInvalidQuery indicates if err is ErrInvalidQuery.
+func IsInvalidQuery(err error) bool {
+	return unwrapError(err) == ErrInvalidQuery
 }
 
 // IsUserExists indicates if err is ErrUserExists.

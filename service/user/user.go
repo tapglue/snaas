@@ -94,6 +94,8 @@ type QueryOptions struct {
 	IDs        []uint64
 	Lastnames  []string
 	Limit      int
+	Offset     uint
+	Query      string
 	SocialIDs  map[string][]string
 	Usernames  []string
 }

@@ -202,13 +202,13 @@ func UserSearch(fn core.UserSearchFunc) Handler {
 			return
 		}
 
-		opts.Before, err = extractIDCursorBefore(r)
+		opts.Limit, err = extractLimit(r)
 		if err != nil {
 			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
 			return
 		}
 
-		opts.Limit, err = extractLimit(r)
+		opts.Offset, err = extractOffsetCursorBefore(r)
 		if err != nil {
 			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
 			return
@@ -230,7 +230,7 @@ func UserSearch(fn core.UserSearchFunc) Handler {
 				r,
 				opts.Limit,
 				userCursorAfter(us, opts.Limit),
-				userCursorBefore(us, opts.Limit),
+				userSearchCursorBefore(us, opts.Limit, opts.Offset),
 				keyUserQuery, query,
 			),
 			users: us,
@@ -600,4 +600,16 @@ func userCursorBefore(us user.List, limit int) string {
 	}
 
 	return before
+}
+
+func userSearchCursorAfter(us user.List, limit int, offset uint) string {
+	if offset == 0 || offset <= uint(limit) {
+		return toOffsetCursor(0)
+	}
+
+	return toOffsetCursor(offset - uint(limit))
+}
+
+func userSearchCursorBefore(us user.List, limit int, offset uint) string {
+	return toOffsetCursor(uint(limit) + offset)
 }

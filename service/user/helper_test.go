@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/drhodes/golorem"
 
 	serr "github.com/tapglue/snaas/error"
 	"github.com/tapglue/snaas/platform/generate"
@@ -431,19 +434,15 @@ func testServiceSearch(t *testing.T, p prepareFunc) {
 		service   = p(t, namespace)
 	)
 
-	us, err := service.Search(namespace, QueryOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(us), 0; have != want {
-		t.Errorf("have %v, want %v", have, want)
+	_, err := service.Search(namespace, QueryOptions{})
+	if err == nil {
+		t.Errorf("expected error when query is empty")
 	}
 
 	u := testUser()
 	u.Firstname = generate.RandomString(12)
 	u.Lastname = generate.RandomString(12)
-	u.Username = generate.RandomString(8)
+	u.Username = "time"
 
 	created, err := service.Put(namespace, u)
 	if err != nil {
@@ -457,57 +456,16 @@ func testServiceSearch(t *testing.T, p prepareFunc) {
 		}
 	}
 
-	us, err = service.Search(namespace, QueryOptions{
-		Emails: []string{
-			created.Email[0 : len(u.Email)-3],
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(us), 1; have != want {
-		t.Errorf("have %v, want %v", have, want)
-	}
-
-	us, err = service.Search(namespace, QueryOptions{
-		Firstnames: []string{
-			created.Firstname[1:10],
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(us), 1; have != want {
-		t.Errorf("have %v, want %v", have, want)
-	}
-
-	us, err = service.Search(namespace, QueryOptions{
-		Lastnames: []string{
-			created.Lastname[1:10],
-		},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if have, want := len(us), 1; have != want {
-		t.Errorf("have %v, want %v", have, want)
-	}
-
-	us, err = service.Search(namespace, QueryOptions{
+	us, err := service.Search(namespace, QueryOptions{
 		Enabled: &defaultEnabled,
-		Usernames: []string{
-			created.Username[3:7],
-		},
+		Query:   created.Username[:3],
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if have, want := len(us), 1; have != want {
-		t.Errorf("have %v, want %v", have, want)
+	if have, want := us[0], created; !reflect.DeepEqual(have, want) {
+		t.Errorf("\nhave %v\nwant %v", have, want)
 	}
 }
 
@@ -520,7 +478,7 @@ func testUser() *User {
 		),
 		Enabled:  true,
 		Password: generate.RandomString(8),
-		Username: generate.RandomString(8),
+		Username: strings.Join([]string{lorem.Word(4, 16), generate.RandomString(4)}, ""),
 	}
 }
 
