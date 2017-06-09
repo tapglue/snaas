@@ -113,13 +113,53 @@ resource "aws_iam_role_policy" "ecs-agent" {
         "ecr:GetAuthorizationToken",
         "ecr:BatchCheckLayerAvailability",
         "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage",
-        "rds:DescribeDBInstances"
+        "ecr:BatchGetImage"
       ],
       "Resource": [
         "*"
       ]
     }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "pganalyze" {
+  name = "pganalyze"
+  role = "${aws_iam_role.ecs-agent.id}"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+      {
+          "Action": [
+              "ec2:DescribeAccountAttributes",
+              "ec2:DescribeAvailabilityZones",
+              "ec2:DescribeSecurityGroups",
+              "ec2:DescribeVpcs",
+              "rds:Describe*",
+              "rds:ListTagsForResource"
+          ],
+          "Effect": "Allow",
+          "Resource": "*"
+      },
+      {
+          "Action": [
+              "cloudwatch:GetMetricStatistics",
+              "logs:DescribeLogStreams",
+              "logs:GetLogEvents"
+          ],
+          "Effect": "Allow",
+          "Resource": "*"
+      },
+      {
+          "Action": [
+            "rds:DownloadDBLogFilePortion"
+          ],
+          "Effect": "Allow",
+          "Resource": "*"
+      }
   ]
 }
 EOF
