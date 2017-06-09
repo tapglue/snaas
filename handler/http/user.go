@@ -229,7 +229,7 @@ func UserSearch(fn core.UserSearchFunc) Handler {
 			pagination: pagination(
 				r,
 				opts.Limit,
-				userCursorAfter(us, opts.Limit),
+				userSearchCursorAfter(us, opts.Limit, opts.Offset),
 				userSearchCursorBefore(us, opts.Limit, opts.Offset),
 				keyUserQuery, query,
 			),

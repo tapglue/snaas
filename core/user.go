@@ -401,6 +401,7 @@ func UserSearch(
 			Firstnames: t,
 			Lastnames:  t,
 			Limit:      opts.Limit,
+			Offset:     opts.Offset,
 			Query:      query,
 			Usernames:  t,
 		})
