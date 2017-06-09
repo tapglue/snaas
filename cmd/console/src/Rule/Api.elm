@@ -41,8 +41,8 @@ deactivateRule msg appId ruleId =
         |> Http.send msg
 
 
-deleteRule : String -> String -> Cmd (WebData Bool)
-deleteRule appId ruleId =
+deleteRule : (Result Http.Error () -> msg) -> String -> String -> Cmd msg
+deleteRule msg appId ruleId =
     Http.request
         { body = Http.emptyBody
         , expect = expectEmpty
@@ -52,7 +52,7 @@ deleteRule appId ruleId =
         , url = ruleUrl appId ruleId
         , withCredentials = False
         }
-        |> sendRequest
+        |> Http.send msg
 
 
 getRule : String -> String -> Cmd (WebData Rule)
@@ -67,15 +67,15 @@ listRules appId =
         |> sendRequest
 
 
-expectEmpty : Http.Expect Bool
+expectEmpty : Http.Expect ()
 expectEmpty =
     Http.expectStringResponse readEmpty
 
 
-readEmpty : Http.Response String -> Result String Bool
+readEmpty : Http.Response String -> Result String ()
 readEmpty response =
     if response.status.code == 204 then
-        Ok True
+        Ok ()
     else
         Err response.status.message
 

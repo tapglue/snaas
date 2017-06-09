@@ -1,4 +1,4 @@
-module Rule.Model exposing (Entity(..), Rule, decode, decodeList, targetString)
+module Rule.Model exposing (Entity(..), Recipient, Rule, Target, decode, decodeList, targetString)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
