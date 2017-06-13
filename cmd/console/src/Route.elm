@@ -16,6 +16,7 @@ type Route
     | OAuthCallback (Maybe String) (Maybe String)
     | Rule String String
     | Rules String
+    | User String String
     | Users String
 
 
@@ -50,6 +51,9 @@ construct route =
         Rules appId ->
             "/apps/" ++ appId ++ "/rules"
 
+        User appId uesrId ->
+            "/apps/" ++ appId ++ "/users/" ++ uesrId
+
         Users appId ->
             "/apps/" ++ appId ++ "/users"
 
@@ -75,5 +79,6 @@ routes =
         , map OAuthCallback (s "oauth2callback" <?> stringParam "code" <?> stringParam "state")
         , map Rule (s "apps" </> string </> s "rules" </> string)
         , map Rules (s "apps" </> string </> s "rules")
+        , map User (s "apps" </> string </> s "users" </> string)
         , map Users (s "apps" </> string </> s "users")
         ]

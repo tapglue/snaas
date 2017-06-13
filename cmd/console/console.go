@@ -366,6 +366,31 @@ func main() {
 		),
 	)
 
+	router.Methods("GET").Path("/api/apps/{appID:[0-9]+}/users/{userID:[0-9]+}").Name("userFetch").HandlerFunc(
+		handler.Wrap(
+			withConstraints,
+			handler.UserFetchConsole(
+				core.UserFetchConsole(apps, users),
+			),
+		),
+	)
+
+	router.Methods("GET").Path("/api/apps/{appID:[0-9]+}/users/search").Name("userSearch").HandlerFunc(
+		handler.Wrap(
+			withConstraints,
+			handler.UserSearchConsole(
+				core.UserSearchConsole(apps, users),
+			),
+		),
+	)
+
+	router.Methods("PUT").Path(`/api/apps/{appID:[0-9]+}/users/{userID:[0-9]+}`).Name("userUpdate").HandlerFunc(
+		handler.Wrap(
+			withConstraints,
+			handler.UserUpdateConsole(core.UserUpdateConsole(apps, users)),
+		),
+	)
+
 	router.Methods("GET").PathPrefix("/fonts").Name("fonts").Handler(
 		http.FileServer(FS(*staticLocal)),
 	)
