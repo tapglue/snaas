@@ -141,9 +141,9 @@ variable "pganalyze_api_key" {
 
 variable "version" {
   default = {
-    "console"      = "382"
-    "gateway-http" = "382"
-    "sims"         = "382"
+    "console"      = "384"
+    "gateway-http" = "384"
+    "sims"         = "384"
   }
 
   description = "Versions used for deployed services"
