@@ -139,6 +139,32 @@ func UserFetch(users user.Service) UserFetchFunc {
 	}
 }
 
+type UserFetchConsoleFunc func(appID, userID uint64) (*user.User, error)
+
+func UserFetchConsole(apps app.Service, users user.Service) UserFetchConsoleFunc {
+	return func(appID, userID uint64) (*user.User, error) {
+		currentApp, err := AppFetch(apps)(appID)
+		if err != nil {
+			return nil, err
+		}
+
+		us, err := users.Query(currentApp.Namespace(), user.QueryOptions{
+			IDs: []uint64{
+				userID,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(us) == 0 {
+			return nil, ErrNotFound
+		}
+
+		return us[0], nil
+	}
+}
+
 // UserListByEmailsFunc returns all users for the given emails.
 type UserListByEmailsFunc func(
 	currentApp *app.App,
@@ -373,6 +399,36 @@ func UserRetrieve(
 	}
 }
 
+type UserSearchConsoleFunc func(
+	appID uint64,
+	query string,
+	limit int,
+	offset uint,
+) (user.List, error)
+
+func UserSearchConsole(
+	apps app.Service,
+	users user.Service,
+) UserSearchConsoleFunc {
+	return func(appID uint64, query string, limit int, offset uint) (user.List, error) {
+		currentApp, err := AppFetch(apps)(appID)
+		if err != nil {
+			return nil, err
+		}
+
+		us, err := users.Search(currentApp.Namespace(), user.QueryOptions{
+			Limit:  limit,
+			Offset: offset,
+			Query:  query,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		return us, nil
+	}
+}
+
 // UserSearchFunc returns all users for the given query.
 type UserSearchFunc func(
 	currentApp *app.App,
@@ -422,6 +478,29 @@ func UserSearch(
 		}
 
 		return us, nil
+	}
+}
+
+type UserUpdateConsoleFunc func(appID, userID uint64, username string) (*user.User, error)
+
+func UserUpdateConsole(
+	apps app.Service,
+	users user.Service,
+) UserUpdateConsoleFunc {
+	return func(appID, userID uint64, username string) (*user.User, error) {
+		currentApp, err := AppFetch(apps)(appID)
+		if err != nil {
+			return nil, err
+		}
+
+		u, err := UserFetchConsole(apps, users)(appID, userID)
+		if err != nil {
+			return nil, err
+		}
+
+		u.Username = username
+
+		return users.Put(currentApp.Namespace(), u)
 	}
 }
 

@@ -8,6 +8,7 @@ import App.Model exposing (App)
 import Member.Model exposing (Member)
 import Route exposing (Route)
 import Rule.Model exposing (Rule)
+import User.Model exposing (User)
 
 
 type Msg
@@ -33,3 +34,16 @@ type Msg
     | RuleDelete (Result Http.Error ())
     | Tick Time
     | TokenPersist String
+    | UserFetch (WebData User)
+    | UserSearch (WebData (List User))
+    | UserSearchFormBlur String
+    | UserSearchFormClear
+    | UserSearchFormFocus String
+    | UserSearchFormSubmit
+    | UserSearchFormUpdate String String
+    | UserUpdate (WebData User)
+    | UserUpdateFormBlur String
+    | UserUpdateFormClear
+    | UserUpdateFormFocus String
+    | UserUpdateFormSubmit
+    | UserUpdateFormUpdate String String

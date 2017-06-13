@@ -13,6 +13,8 @@ import Member.Model exposing (Member)
 import Route exposing (Route, parse)
 import Rule.Api exposing (getRule, listRules)
 import Rule.Model exposing (Rule)
+import User.Api exposing (getUser)
+import User.Model exposing (User, initUserSearchForm, initUserUpdateForm)
 
 
 type alias Flags =
@@ -35,6 +37,11 @@ type alias Model =
     , rules : WebData (List Rule)
     , startTime : Time
     , time : Time
+    , user : WebData User
+    , userId : String
+    , users : WebData (List User)
+    , userSearchForm : Form
+    , userUpdateForm : Form
     , zone : String
     }
 
@@ -57,7 +64,7 @@ init { loginUrl, zone } location =
                     Just code ->
                         ( model, Cmd.map MemberLogin (loginMember code) )
 
-            Just (Route.Login) ->
+            Just Route.Login ->
                 ( model, Cmd.none )
 
             _ ->
@@ -71,7 +78,7 @@ init { loginUrl, zone } location =
 
 initModel : String -> String -> Maybe Route -> Model
 initModel loginUrl zone route =
-    Model NotAsked NotAsked initAppForm "" "" loginUrl Loading NotAsked route NotAsked NotAsked 0 0 zone
+    Model NotAsked NotAsked initAppForm "" "" loginUrl Loading NotAsked route NotAsked NotAsked 0 0 NotAsked "" NotAsked initUserSearchForm (initUserUpdateForm NotAsked) zone
 
 
 initRoute : Model -> ( Model, Cmd Msg )
@@ -80,8 +87,25 @@ initRoute model =
         Just (Route.App id) ->
             ( { model | app = Loading, appId = id }, Cmd.map FetchApp (getApp id) )
 
-        Just (Route.Apps) ->
+        Just Route.Apps ->
             ( { model | apps = Loading }, Cmd.map FetchApps getApps )
+
+        Just (Route.Rule appId ruleId) ->
+            case model.app of
+                Success _ ->
+                    ( { model | appId = appId, rule = Loading }
+                    , Cmd.batch
+                        [ Cmd.map FetchRule (getRule appId ruleId)
+                        ]
+                    )
+
+                _ ->
+                    ( { model | app = Loading, appId = appId, rule = Loading }
+                    , Cmd.batch
+                        [ Cmd.map FetchApp (getApp appId)
+                        , Cmd.map FetchRule (getRule appId ruleId)
+                        ]
+                    )
 
         Just (Route.Rules appId) ->
             case model.app of
@@ -100,22 +124,30 @@ initRoute model =
                         ]
                     )
 
-        Just (Route.Rule appId ruleId) ->
+        Just (Route.User appId userId) ->
             case model.app of
                 Success _ ->
-                    ( { model | appId = appId, rule = Loading }
+                    ( { model | appId = appId, user = Loading, userId = userId }
                     , Cmd.batch
-                        [ Cmd.map FetchRule (getRule appId ruleId)
+                        [ Cmd.map UserFetch (getUser appId userId)
                         ]
                     )
 
                 _ ->
-                    ( { model | app = Loading, appId = appId, rule = Loading }
+                    ( { model | app = Loading, appId = appId, user = Loading, userId = userId }
                     , Cmd.batch
                         [ Cmd.map FetchApp (getApp appId)
-                        , Cmd.map FetchRule (getRule appId ruleId)
+                        , Cmd.map UserFetch (getUser appId userId)
                         ]
                     )
+
+        Just (Route.Users appId) ->
+            case model.app of
+                Success _ ->
+                    ( model, Cmd.none )
+
+                _ ->
+                    ( { model | app = Loading, appId = appId }, Cmd.map FetchApp (getApp appId) )
 
         _ ->
             ( model, Cmd.none )

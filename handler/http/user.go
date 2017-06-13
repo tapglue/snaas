@@ -182,6 +182,79 @@ func UserRetrieveMe(fn core.UserRetrieveFunc) Handler {
 	}
 }
 
+func UserFetchConsole(fn core.UserFetchConsoleFunc) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		appID, err := extractAppID(r)
+		if err != nil {
+			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
+			return
+		}
+
+		userID, err := extractUserID(r)
+		if err != nil {
+			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
+			return
+		}
+
+		u, err := fn(appID, userID)
+		if err != nil {
+			respondError(w, 0, err)
+			return
+		}
+
+		respondJSON(w, http.StatusOK, &payloadUser{user: u})
+	}
+}
+
+// UserSearchConsole returns users matching the query.
+func UserSearchConsole(fn core.UserSearchConsoleFunc) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		appID, err := extractAppID(r)
+		if err != nil {
+			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
+			return
+		}
+
+		var (
+			query = r.URL.Query().Get(keyUserQuery)
+		)
+
+		limit, err := extractLimit(r)
+		if err != nil {
+			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
+			return
+		}
+
+		offset, err := extractOffsetCursorBefore(r)
+		if err != nil {
+			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
+			return
+		}
+
+		us, err := fn(appID, query, limit, offset)
+		if err != nil {
+			respondError(w, 0, err)
+			return
+		}
+
+		if len(us) == 0 {
+			respondJSON(w, http.StatusNoContent, nil)
+			return
+		}
+
+		respondJSON(w, http.StatusOK, &payloadUsers{
+			pagination: pagination(
+				r,
+				limit,
+				userSearchCursorAfter(us, limit, offset),
+				userSearchCursorBefore(us, limit, offset),
+				keyUserQuery, query,
+			),
+			users: us,
+		})
+	}
+}
+
 // UserSearch returns all users for the given search query.
 func UserSearch(fn core.UserSearchFunc) Handler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -367,6 +440,38 @@ func UserSearchPlatform(fn core.UserListByPlatformIDsFunc) Handler {
 	}
 }
 
+func UserUpdateConsole(fn core.UserUpdateConsoleFunc) Handler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		appID, err := extractAppID(r)
+		if err != nil {
+			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
+			return
+		}
+
+		userID, err := extractUserID(r)
+		if err != nil {
+			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
+			return
+		}
+
+		p := payloadUser{}
+
+		err = json.NewDecoder(r.Body).Decode(&p)
+		if err != nil {
+			respondError(w, 0, wrapError(ErrBadRequest, err.Error()))
+			return
+		}
+
+		u, err := fn(appID, userID, p.user.Username)
+		if err != nil {
+			respondError(w, 0, err)
+			return
+		}
+
+		respondJSON(w, http.StatusOK, &payloadUser{user: u})
+	}
+}
+
 // UserUpdate stores the new attributes given.
 func UserUpdate(fn core.UserUpdateFunc) Handler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -455,6 +560,7 @@ func (p *payloadUser) MarshalJSON() ([]byte, error) {
 		About          string                `json:"about"`
 		CustomID       string                `json:"custom_id,omitempty"`
 		Email          string                `json:"email"`
+		Enabled        bool                  `json:"enabled"`
 		Firstname      string                `json:"first_name"`
 		FollowerCount  int                   `json:"follower_count"`
 		FollowingCount int                   `json:"followed_count"`
@@ -478,6 +584,7 @@ func (p *payloadUser) MarshalJSON() ([]byte, error) {
 		About:          p.user.About,
 		CustomID:       p.user.CustomID,
 		Email:          p.user.Email,
+		Enabled:        p.user.Enabled,
 		Firstname:      p.user.Firstname,
 		FollowerCount:  p.user.FollowerCount,
 		FollowingCount: p.user.FollowingCount,

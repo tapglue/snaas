@@ -5,12 +5,15 @@ import Color exposing (rgb)
 import Html exposing (..)
 import Html.Attributes exposing (class, href, id, placeholder, src, title, type_, value)
 import Html.Events exposing (onBlur, onClick, onFocus, onInput, onSubmit)
+import Http exposing (Error(BadStatus))
+import Json.Decode as Decode
 import RemoteData exposing (RemoteData(Failure, Loading, NotAsked, Success), WebData)
 import Time exposing (Time)
 import Action exposing (..)
 import App.Model exposing (App)
 import App.View exposing (viewAppItem, viewAppsTable)
 import Container
+import Error
 import Formo exposing (Form, elementErrors, elementIsFocused, elementIsValid, elementValue, formIsValidated)
 import Loader
 import Member.Model exposing (Member)
@@ -18,6 +21,8 @@ import Model exposing (Model, isLoggedIn)
 import Route
 import Rule.Model exposing (Rule)
 import Rule.View exposing (viewRule, viewRuleItem, viewRuleTable)
+import User.Model exposing (User)
+import User.View exposing (viewUser, viewUserItem, viewUserTable)
 
 
 view : Model -> Html Msg
@@ -36,16 +41,16 @@ getPage model =
             Just (Route.App _) ->
                 pageApp model
 
-            Just (Route.Apps) ->
+            Just Route.Apps ->
                 pageApps model
 
-            Just (Route.Dashboard) ->
+            Just Route.Dashboard ->
                 pageDashboard model
 
-            Just (Route.Login) ->
+            Just Route.Login ->
                 pageLogin model
 
-            Just (Route.Members) ->
+            Just Route.Members ->
                 pageNotFound
 
             Just (Route.OAuthCallback _ _) ->
@@ -57,8 +62,11 @@ getPage model =
             Just (Route.Rules _) ->
                 pageRules model
 
+            Just (Route.User _ _) ->
+                pageUser model
+
             Just (Route.Users _) ->
-                pageNotFound
+                pageUsers model
     else if model.route == (Just Route.Login) then
         pageLogin model
     else
@@ -113,12 +121,12 @@ pageApps { app, apps, appForm, newApp, startTime, time } =
             if List.length apps == 0 then
                 div []
                     [ h3 [] [ text "Looks like you haven't created an App yet." ]
-                      --, formApp newApp appForm startTime time
+                    , formApp newApp appForm startTime time
                     ]
             else
                 div []
                     [ viewAppsTable viewItem apps
-                      --, formApp newApp appForm startTime time
+                    , formApp newApp appForm startTime time
                     ]
     in
         main_ []
@@ -191,21 +199,6 @@ pageNotFound =
         [ h3 [] [ text "Looks like we couldn't find the page you were looking for." ]
         ]
 
-viewAction : ( Msg, String, Maybe Int, String ) -> Html Msg
-viewAction ( msg, icon, _, name ) =
-    li []
-        [ a [ onClick msg ]
-            [ div [ class ("icon nc-icon-glyph " ++ icon) ] []
-            , div [ class "name" ] [ text name ]
-            ]
-        ]
-
-viewActions : List ( Msg, String, Maybe Int, String ) -> Html Msg
-viewActions actions =
-    Container.view (section [ class "actions" ])
-        [ ul [] (List.map viewAction actions)
-        ]
-
 
 pageRule : Model -> Html Msg
 pageRule { app, appId, rule, startTime, time } =
@@ -236,7 +229,6 @@ pageRule { app, appId, rule, startTime, time } =
         --                , span [] [ text "activate" ]
         --                ]
         --            ]
-
         --viewActions rule =
         --    case rule of
         --        Success rule ->
@@ -255,15 +247,14 @@ pageRule { app, appId, rule, startTime, time } =
         --                        ]
         --                    ]
         --                ]
-
         --        _ ->
         --            ul [] []
-
     in
         div []
             [ viewContextApps app
             , viewContextRules appId rule
             , actions
+
             --, Container.view (section [ class "actions" ]) [ (viewActions rule) ]
             , Container.view (section [ class "highlight" ]) [ (viewWebData viewRule startTime time rule) ]
             ]
@@ -283,6 +274,58 @@ pageRules { app, appId, rule, rules, startTime, time } =
             , viewContextRules appId rule
             , Container.view (section [ class "highlight" ]) [ content ]
             ]
+
+
+pageUser : Model -> Html Msg
+pageUser { app, appId, userUpdateForm, startTime, time, user } =
+    div []
+        [ viewContextApps app
+        , viewContextUsers appId user
+        , Container.view (section [ class "highlight" ])
+            [ (viewWebData viewUser startTime time user)
+            , formUser user userUpdateForm startTime time
+            ]
+        ]
+
+
+pageUsers : Model -> Html Msg
+pageUsers { app, appId, startTime, time, user, users, userSearchForm } =
+    let
+        viewItem =
+            (\user -> viewUserItem (Navigate (Route.User appId user.id)) user)
+    in
+        div []
+            [ viewContextApps app
+            , viewContextUsers appId user
+            , Container.view (section [ class "highlight" ])
+                [ form [ onSubmit UserSearchFormSubmit ]
+                    [ formGroup
+                        [ formElementText UserSearchFormBlur UserSearchFormFocus UserSearchFormUpdate userSearchForm "query"
+                        , div [ class "action-group" ]
+                            [ formButtonSubmit UserSearchFormSubmit "Search"
+                            ]
+                        ]
+                    ]
+                , viewWebData (viewUserTable viewItem) startTime time users
+                ]
+            ]
+
+
+viewAction : ( Msg, String, Maybe Int, String ) -> Html Msg
+viewAction ( msg, icon, _, name ) =
+    li []
+        [ a [ onClick msg ]
+            [ div [ class ("icon nc-icon-glyph " ++ icon) ] []
+            , div [ class "name" ] [ text name ]
+            ]
+        ]
+
+
+viewActions : List ( Msg, String, Maybe Int, String ) -> Html Msg
+viewActions actions =
+    Container.view (section [ class "actions" ])
+        [ ul [] (List.map viewAction actions)
+        ]
 
 
 viewContext : String -> Msg -> Html Msg -> Bool -> String -> Html Msg
@@ -335,6 +378,20 @@ viewContextRules appId rule =
         viewContext "Rules" (Navigate (Route.Rules appId)) viewRule False "education_book-39"
 
 
+viewContextUsers : String -> WebData User -> Html Msg
+viewContextUsers appId user =
+    let
+        ( selected, viewUser ) =
+            case user of
+                Success user ->
+                    ( True, viewSelected (Navigate (Route.User appId user.id)) user.username )
+
+                _ ->
+                    ( False, span [] [] )
+    in
+        viewContext "Users" (Navigate (Route.Users appId)) viewUser selected "users_multiple-11"
+
+
 viewDebug : Model -> Html Msg
 viewDebug model =
     div [ class "debug" ]
@@ -377,11 +434,8 @@ viewHeader { member, zone } =
 viewFooter : Model -> Html Msg
 viewFooter model =
     Container.view (footer [])
+        --[ viewDebug model ]
         []
-
-
-
---[ viewDebug model ]
 
 
 viewProfile : WebData Member -> Html Msg
@@ -411,13 +465,38 @@ viewWebData : (a -> Html Msg) -> Time -> Time -> WebData a -> Html Msg
 viewWebData view startTime time data =
     case data of
         NotAsked ->
-            h3 [] [ text "Initialising" ]
+            div [] []
 
         Loading ->
             Loader.view 64 (rgb 63 91 96) (Loader.nextStep startTime time)
 
         Failure err ->
-            h3 [] [ text ("Error: " ++ toString err) ]
+            case err of
+                BadStatus response ->
+                    let
+                        errors =
+                            Decode.decodeString Error.decodeList response.body
+                    in
+                        case errors of
+                            Ok errors ->
+                                let
+                                    viewError err =
+                                        li []
+                                            [ text err.message
+                                            , span []
+                                                [ text " ("
+                                                , text (toString err.code)
+                                                , text ")"
+                                                ]
+                                            ]
+                                in
+                                    ul [ class "errors api" ] (List.map viewError errors)
+
+                            Err err ->
+                                span [ class "errors parse" ] [ text err ]
+
+                _ ->
+                    span [ class "errors network" ] [ text ("Error: " ++ toString err) ]
 
         Success data ->
             view data
@@ -425,6 +504,19 @@ viewWebData view startTime time data =
 
 
 -- FORM
+
+
+formUser : WebData User -> Form -> Time -> Time -> Html Msg
+formUser user userUpdateForm startTime time =
+    form [ onSubmit UserUpdateFormSubmit ]
+        [ formGroup
+            [ formElementText UserUpdateFormBlur UserUpdateFormFocus UserUpdateFormUpdate userUpdateForm "username"
+            ]
+        , div [ class "action-group" ]
+            [ formButtonReset UserUpdateFormClear "Clear"
+            , formButtonSubmit UserUpdateFormSubmit "Update"
+            ]
+        ]
 
 
 formApp : WebData App -> Form -> Time -> Time -> Html Msg

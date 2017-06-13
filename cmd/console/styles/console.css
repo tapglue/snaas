@@ -408,6 +408,12 @@ table.navigation tbody tr:hover {
 	background: rgb(236, 240, 241);
 }
 
+ul.errors li {
+	font-size: 2rem;
+	list-style: none;
+	text-transform: capitalize;
+}
+
 /*ul.actions {
 	display: flex;
 	justify-content: flex-end;

@@ -6,6 +6,8 @@
 # Folders
 _obj
 _test
+elm-stuff
+node_modules
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -22,5 +24,3 @@ _testmain.go
 *.exe
 *.test
 *.prof
-
-elm-stuff

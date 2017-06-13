@@ -11,6 +11,8 @@ import App.Api exposing (createApp)
 import App.Model exposing (initAppForm)
 import Route
 import Rule.Api exposing (activateRule, deactivateRule, deleteRule)
+import User.Api exposing (searchUser, updateUser)
+import User.Model exposing (initUserSearchForm, initUserUpdateForm)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -130,6 +132,63 @@ update msg model =
                         model.startTime
             in
                 ( { model | startTime = startTime, time = time }, Cmd.none )
+
+        UserFetch response ->
+            ( { model | user = response, userUpdateForm = (initUserUpdateForm response) }, Cmd.none )
+
+        UserSearch response ->
+            ( { model | users = response }, Cmd.none )
+
+        UserSearchFormBlur field ->
+            ( { model | userSearchForm = blurElement model.userSearchForm field }, Cmd.none )
+
+        UserSearchFormClear ->
+            ( { model | userSearchForm = initUserSearchForm }, Cmd.none )
+
+        UserSearchFormFocus field ->
+            ( { model | userSearchForm = focusElement model.userSearchForm field }, Cmd.none )
+
+        UserSearchFormSubmit ->
+            let
+                ( form, isValid ) =
+                    validateForm model.userSearchForm
+            in
+                case isValid of
+                    True ->
+                        ( { model | users = Loading }, Cmd.map UserSearch (searchUser model.appId (elementValue model.userSearchForm "query")) )
+
+                    False ->
+                        ( { model | userSearchForm = form }, Cmd.none )
+
+        UserSearchFormUpdate field value ->
+            ( { model | userSearchForm = updateElementValue model.userSearchForm field value }, Cmd.none )
+
+        UserUpdate response ->
+            ( { model | user = response }, Cmd.none )
+
+        UserUpdateFormBlur field ->
+            ( { model | userUpdateForm = blurElement model.userUpdateForm field }, Cmd.none )
+
+        UserUpdateFormClear ->
+            ( { model | userUpdateForm = (initUserUpdateForm model.user) }, Cmd.none )
+
+        UserUpdateFormFocus field ->
+            ( { model | userUpdateForm = focusElement model.userUpdateForm field }, Cmd.none )
+
+        UserUpdateFormSubmit ->
+            let
+                ( form, isValid ) =
+                    validateForm model.userUpdateForm
+            in
+                case isValid of
+                    True ->
+                        ( { model | user = Loading }, Cmd.map UserUpdate (updateUser model.appId model.userId (elementValue model.userUpdateForm "username")) )
+
+                    False ->
+                        ( { model | userUpdateForm = form }, Cmd.none )
+
+        UserUpdateFormUpdate field value ->
+            ( { model | userUpdateForm = updateElementValue model.userUpdateForm field value }, Cmd.none )
 
 
 
