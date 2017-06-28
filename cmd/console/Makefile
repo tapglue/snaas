@@ -13,7 +13,7 @@ compile-watch:
 	elm-live src/Main.elm --output=scripts/console.js
 
 static:
-	esc -pkg main -ignore 'elm-*|.git*|.go$|src|tests' -o static.go .
+	esc -pkg main -ignore '.git*|elm-*|node_modules|src|tests|Makefile|.go' -o static.go .
 
 test:
 	elm-test
