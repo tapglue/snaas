@@ -51,7 +51,7 @@ initUserSearchForm =
     initForm
         [ ( "query"
           , [ validatorExist
-            , validatorMinLength 3
+            , validatorMinLength 1
             ]
           )
         ]
