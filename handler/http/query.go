@@ -26,6 +26,7 @@ const (
 
 	keyAppID             = "appID"
 	keyCommentID         = "commentID"
+	keyCounterName       = "counterName"
 	keyCursorAfter       = "after"
 	keyCursorBefore      = "before"
 	keyInviteConnections = "invite-connections"
@@ -149,6 +150,10 @@ func extractCommentOpts(r *http.Request) (object.QueryOptions, error) {
 
 func extractConnectionOpts(r *http.Request) (connection.QueryOptions, error) {
 	return connection.QueryOptions{}, nil
+}
+
+func extractCounterName(r *http.Request) (string, error) {
+	return mux.Vars(r)[keyCounterName], nil
 }
 
 type condition struct {
