@@ -25,6 +25,7 @@ import (
 	"github.com/tapglue/snaas/platform/redis"
 	"github.com/tapglue/snaas/service/app"
 	"github.com/tapglue/snaas/service/connection"
+	"github.com/tapglue/snaas/service/counter"
 	"github.com/tapglue/snaas/service/device"
 	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/invite"
@@ -342,6 +343,9 @@ func main() {
 	// Combine connection service and source.
 	connections = connection.SourcingServiceMiddleware(conSource)(connections)
 
+	var counters counter.Service
+	counters = counter.PostgresService(pgClient)
+
 	var devices device.Service
 	devices = device.PostgresService(pgClient)
 	devices = device.InstrumentServiceMiddleware(
@@ -502,6 +506,20 @@ func main() {
 			handler.ConnectionUpdate(
 				core.ConnectionUpdate(connections, users),
 			),
+		),
+	)
+
+	current.Methods("PUT").Path(`/me/counters/{counterName:[a-z_\-]+}`).Name("counterGetMe").HandlerFunc(
+		handler.Wrap(
+			withUser,
+			handler.CounterSet(core.CounterSet(counters)),
+		),
+	)
+
+	current.Methods("GET").Path(`/counters/{counterName:[a-z_\-]+}`).Name("counterGetAll").HandlerFunc(
+		handler.Wrap(
+			withUser,
+			handler.CounterGetAll(core.CounterGetAll(counters)),
 		),
 	)
 
