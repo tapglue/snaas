@@ -9,10 +9,16 @@ resource "aws_db_subnet_group" "service" {
   ]
 }
 
-resource "aws_db_parameter_group" "service-master" {
+resource "aws_db_parameter_group" "service-master96" {
   description = "Service Postgres master"
-  family      = "postgres9.5"
-  name        = "service-master"
+  family      = "postgres9.6"
+  name        = "service-master96"
+
+  parameter {
+    apply_method = "immediate"
+    name         = "log_retention_period"
+    value        = "1440"
+  }
 
   parameter {
     apply_method = "pending-reboot"
@@ -23,7 +29,7 @@ resource "aws_db_parameter_group" "service-master" {
   parameter {
     apply_method = "pending-reboot"
     name         = "log_min_duration_statement"
-    value        = "20"
+    value        = "0"
   }
 
   parameter {
@@ -106,25 +112,25 @@ resource "aws_db_parameter_group" "service-master" {
 }
 
 resource "aws_db_instance" "service-master" {
-  allocated_storage         = "300"
-  apply_immediately         = true
-  backup_retention_period   = 30
-  backup_window             = "04:00-04:30"
-  db_subnet_group_name      = "${aws_db_subnet_group.service.id}"
-  final_snapshot_identifier = "service-master-${var.env}-${var.region}-final"
-  identifier                = "service-master"
-  iops                      = 3000
-  storage_type              = "io1"
-  engine                    = "postgres"
-  engine_version            = "9.5.4"
-  instance_class            = "db.r3.xlarge"
-  maintenance_window        = "sat:05:00-sat:06:30"
+  allocated_storage           = "300"
+  apply_immediately           = true
+  backup_retention_period     = 30
+  backup_window               = "04:00-04:30"
+  db_subnet_group_name        = "${aws_db_subnet_group.service.id}"
+  final_snapshot_identifier   = "service-master-${var.env}-${var.region}-final"
+  identifier                  = "service-master"
+  iops                        = 3000
+  storage_type                = "io1"
+  engine                      = "postgres"
+  engine_version              = "9.6.3"
+  instance_class              = "db.r3.xlarge"
+  maintenance_window          = "sat:05:00-sat:06:30"
 
   monitoring_interval = 1
   monitoring_role_arn = "${aws_iam_role.rds-monitoring.arn}"
   multi_az            = true
 
-  parameter_group_name = "${aws_db_parameter_group.service-master.id}"
+  parameter_group_name = "${aws_db_parameter_group.service-master96.id}"
   publicly_accessible  = false
   skip_final_snapshot  = false
   storage_encrypted    = true
