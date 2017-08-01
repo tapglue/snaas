@@ -107,61 +107,61 @@ func AppFetchWithCounts(
 
 		a := as[0]
 
-		commentCount, err := objects.Count(a.Namespace(), object.QueryOptions{
-			Types: []string{
-				TypeComment,
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
+		// commentCount, err := objects.Count(a.Namespace(), object.QueryOptions{
+		// 	Types: []string{
+		// 		TypeComment,
+		// 	},
+		// })
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		connectionCount, err := connections.Count(a.Namespace(), connection.QueryOptions{
-			Enabled: &defaultEnabled,
-		})
-		if err != nil {
-			return nil, err
-		}
+		// connectionCount, err := connections.Count(a.Namespace(), connection.QueryOptions{
+		// 	Enabled: &defaultEnabled,
+		// })
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		deviceCount, err := devices.Count(a.Namespace(), device.QueryOptions{
-			Deleted: &defaultDeleted,
-		})
-		if err != nil {
-			return nil, err
-		}
+		// deviceCount, err := devices.Count(a.Namespace(), device.QueryOptions{
+		// 	Deleted: &defaultDeleted,
+		// })
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		postCount, err := objects.Count(a.Namespace(), object.QueryOptions{
-			Types: []string{
-				TypePost,
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
+		// postCount, err := objects.Count(a.Namespace(), object.QueryOptions{
+		// 	Types: []string{
+		// 		TypePost,
+		// 	},
+		// })
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		rs, err := rules.Query(a.Namespace(), rule.QueryOptions{
-			Deleted: &defaultDeleted,
-		})
-		if err != nil {
-			return nil, err
-		}
+		// rs, err := rules.Query(a.Namespace(), rule.QueryOptions{
+		// 	Deleted: &defaultDeleted,
+		// })
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		userCount, err := users.Count(a.Namespace(), user.QueryOptions{
-			Deleted: &defaultDeleted,
-		})
-		if err != nil {
-			return nil, err
-		}
+		// userCount, err := users.Count(a.Namespace(), user.QueryOptions{
+		// 	Deleted: &defaultDeleted,
+		// })
+		// if err != nil {
+		// 	return nil, err
+		// }
 
 		return &App{
-			App: a,
+			App:    a,
 			Counts: AppCounts{
-				Connections: uint(connectionCount),
-				Comments:    uint(commentCount),
-				Devices:     deviceCount,
-				Posts:       uint(postCount),
-				Rules:       uint(len(rs)),
-				Users:       uint(userCount),
+			// Connections: uint(connectionCount),
+			// Comments:    uint(commentCount),
+			// Devices:     deviceCount,
+			// Posts:       uint(postCount),
+			// Rules:       uint(len(rs)),
+			// Users:       uint(userCount),
 			},
 		}, nil
 	}
