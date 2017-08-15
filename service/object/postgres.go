@@ -64,6 +64,16 @@ const (
 		USING btree (((json_data->>'type')::TEXT))`
 	pgCreateIndexVisibility = `CREATE INDEX %s ON %s.objects
 		USING btree (((json_data->>'visibility')::INT))`
+	pgCreateIndexPostAll = `
+		CREATE INDEX
+			%s
+		ON
+			%s.objects ((json_data->>'created_at') DESC)
+		WHERE
+			(json_data->>'deleted')::BOOL = false
+		    AND (json_data->>'owned')::BOOL = true
+		    AND (json_data->>'type')::TEXT IN ('tg_post')
+		    AND (json_data->>'visibility')::INT IN (30, 40)`
 
 	pgDropTable = `DROP TABLE IF EXISTS %s.objects`
 )
@@ -183,6 +193,7 @@ func (s *pgService) Setup(ns string) error {
 		pg.GuardIndex(ns, "object_tags", pgCreateIndexTags),
 		pg.GuardIndex(ns, "object_type", pgCreateIndexType),
 		pg.GuardIndex(ns, "object_visibility", pgCreateIndexVisibility),
+		pg.GuardIndex(ns, "object_post_all", pgCreateIndexPostAll),
 	}
 
 	for _, query := range qs {
