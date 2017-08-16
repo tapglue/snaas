@@ -51,7 +51,33 @@ func (s *cacheService) Count(ns string, opts QueryOptions) (uint, error) {
 }
 
 func (s *cacheService) Put(ns string, input *Reaction) (*Reaction, error) {
-	return s.next.Put(ns, input)
+	key := cacheCountKey(QueryOptions{
+		ObjectIDs: []uint64{
+			input.ObjectID,
+		},
+		Types: []Type{
+			input.Type,
+		},
+	})
+
+	r, err := s.next.Put(ns, input)
+	if err != nil {
+		return nil, err
+	}
+
+	if input.Deleted {
+		_, err := s.countsCache.Decr(ns, key)
+		if err != nil {
+			// We ignore the error of the cache operation.
+		}
+	} else {
+		_, err := s.countsCache.Incr(ns, key)
+		if err != nil {
+			// We ignore the error of the cache operation.
+		}
+	}
+
+	return r, nil
 }
 
 func (s *cacheService) Query(ns string, opts QueryOptions) (List, error) {
