@@ -70,7 +70,7 @@ func (s *cacheService) Put(ns string, input *Reaction) (*Reaction, error) {
 		if err != nil {
 			// We ignore the error of the cache operation.
 		}
-	} else {
+	} else if input.ID == 0 {
 		_, err := s.countsCache.Incr(ns, key)
 		if err != nil {
 			// We ignore the error of the cache operation.
