@@ -16,7 +16,7 @@ resource "aws_db_parameter_group" "service-master96" {
 
   parameter {
     apply_method = "immediate"
-    name         = "log_retention_period"
+    name         = "rds.log_retention_period"
     value        = "1440"
   }
 
@@ -112,18 +112,18 @@ resource "aws_db_parameter_group" "service-master96" {
 }
 
 resource "aws_db_instance" "service-master" {
-  allocated_storage           = "300"
+  allocated_storage           = "500"
   apply_immediately           = true
   backup_retention_period     = 30
   backup_window               = "04:00-04:30"
   db_subnet_group_name        = "${aws_db_subnet_group.service.id}"
   final_snapshot_identifier   = "service-master-${var.env}-${var.region}-final"
   identifier                  = "service-master"
-  iops                        = 3000
+  iops                        = 4000
   storage_type                = "io1"
   engine                      = "postgres"
   engine_version              = "9.6.3"
-  instance_class              = "db.r3.xlarge"
+  instance_class              = "db.r3.2xlarge"
   maintenance_window          = "sat:05:00-sat:06:30"
 
   monitoring_interval = 1
