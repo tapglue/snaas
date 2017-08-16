@@ -41,6 +41,14 @@ func InstrumentCountServiceMiddleware(
 	}
 }
 
+func (s *instrumentCountCache) Decr(ns, key string) (count int, err error) {
+	defer func(begin time.Time) {
+		s.track("Decr", ns, begin, err)
+	}(time.Now())
+
+	return s.next.Decr(ns, key)
+}
+
 func (s *instrumentCountCache) Get(ns, key string) (count int, err error) {
 	defer func(begin time.Time) {
 		if err == nil {
@@ -55,6 +63,14 @@ func (s *instrumentCountCache) Get(ns, key string) (count int, err error) {
 	}(time.Now())
 
 	return s.next.Get(ns, key)
+}
+
+func (s *instrumentCountCache) Incr(ns, key string) (count int, err error) {
+	defer func(begin time.Time) {
+		s.track("Incr", ns, begin, err)
+	}(time.Now())
+
+	return s.next.Incr(ns, key)
 }
 
 func (s *instrumentCountCache) Set(ns, key string, count int) (err error) {

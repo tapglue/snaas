@@ -8,11 +8,16 @@ import (
 
 // Commands.
 const (
-	CommandAuth = "AUTH"
-	CommandPing = "PING"
-	CommandEX   = "EX"
-	CommandGET  = "GET"
-	CommandSET  = "SET"
+	CommandAuth   = "AUTH"
+	CommandDecr   = "DECR"
+	CommandEx     = "EX"
+	CommandExec   = "Exec"
+	CommandExpire = "EXPIRE"
+	CommandGet    = "GET"
+	CommandIncr   = "INCR"
+	CommandMulti  = "MULTI"
+	CommandPing   = "PING"
+	CommandSet    = "SET"
 )
 
 // Defaults.

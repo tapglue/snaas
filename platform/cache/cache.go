@@ -7,7 +7,9 @@ const countPrefix = "cache.count"
 
 // CountService caches counts separated by namespace.
 type CountService interface {
+	Decr(namespace, key string) (int, error)
 	Get(namespace, key string) (int, error)
+	Incr(namespace, key string) (int, error)
 	Set(namespace, key string, count int) error
 }
 
