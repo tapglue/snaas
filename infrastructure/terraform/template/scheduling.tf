@@ -75,7 +75,7 @@ resource "aws_ecs_service" "gateway-http" {
 
   deployment_maximum_percent         = 200
   deployment_minimum_healthy_percent = 50
-  desired_count                      = 3
+  desired_count                      = 5
   iam_role                           = "${aws_iam_role.ecs-scheduler.arn}"
   name                               = "gateway-http"
   task_definition                    = "${aws_ecs_task_definition.gateway-http.arn}"
