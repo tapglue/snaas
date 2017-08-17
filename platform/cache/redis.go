@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	cacheTTLDefault = 300
+	cacheTTLDefault = 86400
 	errCode         = -1
 )
 
