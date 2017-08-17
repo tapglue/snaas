@@ -351,10 +351,10 @@ func PostListUser(
 
 		ps := postsFromObjects(os)
 
-		err = enrichCounts(events, objects, reactions, currentApp, ps)
-		if err != nil {
-			return nil, err
-		}
+		// err = enrichCounts(events, objects, reactions, currentApp, ps)
+		// if err != nil {
+		// 	return nil, err
+		// }
 
 		err = enrichHasReacted(reactions, currentApp, origin, ps)
 		if err != nil {
