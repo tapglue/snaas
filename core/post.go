@@ -361,11 +361,6 @@ func PostListUser(
 			return nil, err
 		}
 
-		err = enrichIsLiked(events, currentApp, origin, ps)
-		if err != nil {
-			return nil, err
-		}
-
 		um, err := user.MapFromIDs(users, currentApp.Namespace(), ps.OwnerIDs()...)
 		if err != nil {
 			return nil, err
@@ -563,19 +558,6 @@ func enrichCounts(
 			return err
 		}
 
-		likes, err := events.Count(currentApp.Namespace(), event.QueryOptions{
-			Enabled: &defaultEnabled,
-			ObjectIDs: []uint64{
-				p.ID,
-			},
-			Types: []string{
-				TypeLike,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
 		reactionCounts := ReactionCounts{}
 
 		reactionCounts.Angry, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
@@ -658,7 +640,6 @@ func enrichCounts(
 
 		p.Counts = PostCounts{
 			Comments:       comments,
-			Likes:          likes,
 			ReactionCounts: reactionCounts,
 		}
 	}
