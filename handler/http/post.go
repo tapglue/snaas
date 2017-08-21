@@ -451,12 +451,12 @@ type postCounts struct {
 }
 
 type reactionCounts struct {
-	Angry uint `json:"angry"`
-	Haha  uint `json:"haha"`
-	Like  uint `json:"like"`
-	Love  uint `json:"love"`
-	Sad   uint `json:"sad"`
-	Wow   uint `json:"wow"`
+	Angry uint64 `json:"angry"`
+	Haha  uint64 `json:"haha"`
+	Like  uint64 `json:"like"`
+	Love  uint64 `json:"love"`
+	Sad   uint64 `json:"sad"`
+	Wow   uint64 `json:"wow"`
 }
 
 type postFields struct {

@@ -51,6 +51,54 @@ func testServiceCount(p prepareFunc, t *testing.T) {
 	}
 }
 
+func testServiceCountMulti(p prepareFunc, t *testing.T) {
+	var (
+		objectIDs = []uint64{
+			uint64(rand.Int63()),
+			uint64(rand.Int63()),
+			uint64(rand.Int63()),
+		}
+		ownerID   = uint64(rand.Int63())
+		namespace = "service_count_multi"
+		service   = p(t, namespace)
+	)
+
+	for _, oid := range objectIDs {
+		for _, r := range testList(oid, ownerID) {
+			r.ObjectID = oid
+
+			_, err := service.Put(namespace, r)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+
+	want := CountsMap{}
+
+	for _, oid := range objectIDs {
+		want[oid] = Counts{
+			Angry: 5,
+			Haha:  3,
+			Like:  21,
+			Love:  9,
+			Sad:   1,
+			Wow:   7,
+		}
+	}
+
+	have, err := service.CountMulti(namespace, QueryOptions{
+		ObjectIDs: objectIDs,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(have, want) {
+		t.Errorf("\nhave %v\nwant %v", have, want)
+	}
+}
+
 func testServicePut(p prepareFunc, t *testing.T) {
 	var (
 		deleted   = true
