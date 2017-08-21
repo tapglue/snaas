@@ -631,11 +631,6 @@ func FeedPosts(
 			return nil, err
 		}
 
-		err = enrichIsLiked(events, currentApp, origin, ps)
-		if err != nil {
-			return nil, err
-		}
-
 		for _, u := range um {
 			err = enrichRelation(connections, currentApp, origin, u)
 			if err != nil {
