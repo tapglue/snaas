@@ -123,7 +123,7 @@ resource "aws_db_instance" "service-master" {
   storage_type                = "io1"
   engine                      = "postgres"
   engine_version              = "9.6.3"
-  instance_class              = "db.r3.2xlarge"
+  instance_class              = "db.r3.xlarge"
   maintenance_window          = "sat:05:00-sat:06:30"
 
   monitoring_interval = 1
