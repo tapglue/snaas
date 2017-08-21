@@ -134,6 +134,26 @@ func (s *logService) Count(ns string, opts QueryOptions) (count uint, err error)
 	return s.next.Count(ns, opts)
 }
 
+func (s *logService) CountMulti(ns string, opts QueryOptions) (m CountsMap, err error) {
+	defer func(begin time.Time) {
+		ps := []interface{}{
+			"duration_ns", time.Since(begin).Nanoseconds(),
+			"keys_count", len(m),
+			"method", "CountMulti",
+			"namespace", ns,
+			"opts", opts,
+		}
+
+		if err != nil {
+			ps = append(ps, "err", err)
+		}
+
+		_ = s.logger.Log(ps...)
+	}(time.Now())
+
+	return s.next.CountMulti(ns, opts)
+}
+
 func (s *logService) Put(ns string, input *Reaction) (output *Reaction, err error) {
 	defer func(begin time.Time) {
 		ps := []interface{}{

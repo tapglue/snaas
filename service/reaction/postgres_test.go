@@ -18,6 +18,10 @@ func TestPostgresCount(t *testing.T) {
 	testServiceCount(preparePostgres, t)
 }
 
+func TestPostgresCountMulti(t *testing.T) {
+	testServiceCountMulti(preparePostgres, t)
+}
+
 func TestPostgresPut(t *testing.T) {
 	testServicePut(preparePostgres, t)
 }

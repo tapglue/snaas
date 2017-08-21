@@ -20,7 +20,9 @@ const (
 	TypeAngry
 )
 
-var TypeToIdenitifier = map[Type]string{
+// TypeToIdentifier is the lookup of a reaction type to human readable
+// idenitfier.
+var TypeToIdentifier = map[Type]string{
 	TypeLike:  "like",
 	TypeLove:  "love",
 	TypeHaha:  "haha",
@@ -33,6 +35,19 @@ var TypeToIdenitifier = map[Type]string{
 type Consumer interface {
 	Consume() (*StateChange, error)
 }
+
+// Counts bundles all Reaction counts by type.
+type Counts struct {
+	Angry uint64
+	Haha  uint64
+	Like  uint64
+	Love  uint64
+	Sad   uint64
+	Wow   uint64
+}
+
+// CountsMap is the association of an object id to Counts.
+type CountsMap map[uint64]Counts
 
 // List is a collection of Reaction.
 type List []*Reaction
@@ -153,6 +168,7 @@ type Service interface {
 	service.Lifecycle
 
 	Count(namespace string, opts QueryOptions) (uint, error)
+	CountMulti(namespace string, opts QueryOptions) (CountsMap, error)
 	Put(namespace string, reaction *Reaction) (*Reaction, error)
 	Query(namespace string, opts QueryOptions) (List, error)
 }

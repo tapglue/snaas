@@ -26,6 +26,45 @@ func (s *memService) Count(ns string, opts QueryOptions) (uint, error) {
 	return uint(len(filterList(s.reactions[ns].ToList(), opts))), nil
 }
 
+func (s *memService) CountMulti(ns string, opts QueryOptions) (CountsMap, error) {
+	if err := s.Setup(ns); err != nil {
+		return nil, err
+	}
+
+	countsMap := CountsMap{}
+
+	for _, oid := range opts.ObjectIDs {
+		counts := Counts{}
+
+		for _, r := range s.reactions[ns] {
+			if r.Deleted {
+				continue
+			}
+
+			if r.ObjectID == oid {
+				switch r.Type {
+				case TypeAngry:
+					counts.Angry++
+				case TypeHaha:
+					counts.Haha++
+				case TypeLike:
+					counts.Like++
+				case TypeLove:
+					counts.Love++
+				case TypeSad:
+					counts.Sad++
+				case TypeWow:
+					counts.Wow++
+				}
+			}
+		}
+
+		countsMap[oid] = counts
+	}
+
+	return countsMap, nil
+}
+
 func (s *memService) Put(ns string, input *Reaction) (*Reaction, error) {
 	if err := s.Setup(ns); err != nil {
 		return nil, err

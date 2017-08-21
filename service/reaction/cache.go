@@ -50,6 +50,10 @@ func (s *cacheService) Count(ns string, opts QueryOptions) (uint, error) {
 	return aCount, err
 }
 
+func (s *cacheService) CountMulti(ns string, opts QueryOptions) (CountsMap, error) {
+	return nil, fmt.Errorf("cacheService.CountMulti not implemented")
+}
+
 func (s *cacheService) Put(ns string, input *Reaction) (*Reaction, error) {
 	key := cacheCountKey(QueryOptions{
 		ObjectIDs: []uint64{
@@ -104,7 +108,7 @@ func cacheCountKey(opts QueryOptions) string {
 	}
 
 	if len(opts.Types) == 1 {
-		ps = append(ps, TypeToIdenitifier[opts.Types[0]])
+		ps = append(ps, TypeToIdentifier[opts.Types[0]])
 	}
 
 	if len(opts.ObjectIDs) == 1 {

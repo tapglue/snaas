@@ -1286,7 +1286,7 @@ func sourceReactions(
 				Type: fmt.Sprintf(
 					reactionEventFmt,
 					event.TypeReaction,
-					reaction.TypeToIdenitifier[r.Type],
+					reaction.TypeToIdentifier[r.Type],
 				),
 				UserID:     r.OwnerID,
 				Visibility: event.VisibilityPrivate,

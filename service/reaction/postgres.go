@@ -1,6 +1,7 @@
 package reaction
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -26,8 +27,21 @@ const (
 		WHERE
 			id = $1`
 
-	pgCountReactions = `SELECT count(*) FROM %s.reactions %s`
-	pgListReactions  = `
+	pgCountReactions      = `SELECT count(*) FROM %s.reactions %s`
+	pgCountReactionsMulti = `
+		SELECT
+			type,
+			count(*)
+		FROM
+			%s.reactions
+		WHERE
+			deleted = false
+			AND object_id = $1
+		GROUP BY
+			type
+		ORDER BY
+			type`
+	pgListReactions = `
 		SELECT
 			deleted, id, object_id, owner_id, type, created_at, updated_at
 		FROM
@@ -92,6 +106,84 @@ func (s *pgService) Count(ns string, opts QueryOptions) (uint, error) {
 	}
 
 	return s.countReactions(ns, where, params...)
+}
+
+func (s *pgService) CountMulti(ns string, opts QueryOptions) (m CountsMap, err error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func(tx *sql.Tx) {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}(tx)
+
+	countsMap := CountsMap{}
+
+	for _, oid := range opts.ObjectIDs {
+		var (
+			counts = Counts{}
+			params = []interface{}{oid}
+		)
+
+		query := fmt.Sprintf(pgCountReactionsMulti, ns)
+
+		rows, err := s.db.Query(query, params...)
+		if err != nil {
+			if rerr := tx.Rollback(); rerr != nil {
+				return nil, err
+			}
+
+			return nil, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var (
+				t     int
+				count uint64
+			)
+
+			err := rows.Scan(&t, &count)
+			if err != nil {
+				return nil, err
+			}
+
+			switch Type(t) {
+			case TypeAngry:
+				counts.Angry = count
+			case TypeHaha:
+				counts.Haha = count
+			case TypeLike:
+				counts.Like = count
+			case TypeLove:
+				counts.Love = count
+			case TypeSad:
+				counts.Sad = count
+			case TypeWow:
+				counts.Wow = count
+			}
+		}
+
+		if err := rows.Err(); err != nil {
+			if rerr := tx.Rollback(); rerr != nil {
+				return nil, err
+			}
+
+			return nil, err
+		}
+
+		countsMap[oid] = counts
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return countsMap, nil
 }
 
 func (s *pgService) Put(ns string, r *Reaction) (*Reaction, error) {

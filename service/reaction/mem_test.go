@@ -6,6 +6,10 @@ func TestMemCount(t *testing.T) {
 	testServiceCount(prepareMem, t)
 }
 
+func TestMemCountMulti(t *testing.T) {
+	testServiceCountMulti(prepareMem, t)
+}
+
 func TestMemPut(t *testing.T) {
 	testServicePut(prepareMem, t)
 }

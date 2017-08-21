@@ -18,6 +18,10 @@ func (s *sourcingService) Count(ns string, opts QueryOptions) (uint, error) {
 	return s.service.Count(ns, opts)
 }
 
+func (s *sourcingService) CountMulti(ns string, opts QueryOptions) (CountsMap, error) {
+	return s.service.CountMulti(ns, opts)
+}
+
 func (s *sourcingService) Put(ns string, input *Reaction) (new *Reaction, err error) {
 	var old *Reaction
 

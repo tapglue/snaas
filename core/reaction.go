@@ -212,13 +212,3 @@ type ReactionFeed struct {
 	PostMap   PostMap
 	UserMap   user.Map
 }
-
-// ReactionCounts bundles all Reaction counts by type.
-type ReactionCounts struct {
-	Angry uint
-	Haha  uint
-	Like  uint
-	Love  uint
-	Sad   uint
-	Wow   uint
-}

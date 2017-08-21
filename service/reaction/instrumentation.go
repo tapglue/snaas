@@ -50,6 +50,14 @@ func (s *instrumentService) Count(
 	return s.next.Count(ns, opts)
 }
 
+func (s *instrumentService) CountMulti(ns string, opts QueryOptions) (m CountsMap, err error) {
+	defer func(begin time.Time) {
+		s.track("CountMulti", ns, begin, err)
+	}(time.Now())
+
+	return s.next.CountMulti(ns, opts)
+}
+
 func (s *instrumentService) Put(
 	ns string,
 	input *Reaction,
@@ -132,6 +140,8 @@ type instrumentSource struct {
 	store        string
 }
 
+// InstrumentSourceMiddleware observes key apsects of Source operations and exposes
+// Prometheus metrics.
 func InstrumentSourceMiddleware(
 	component, store string,
 	errCount kitmetrics.Counter,

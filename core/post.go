@@ -37,7 +37,7 @@ type Post struct {
 type PostCounts struct {
 	Comments       int
 	Likes          int
-	ReactionCounts ReactionCounts
+	ReactionCounts reaction.Counts
 }
 
 // PostFeed is the composite answer for post list methods.
@@ -91,6 +91,16 @@ func (ps PostList) OwnerIDs() []uint64 {
 
 	for _, p := range ps {
 		ids = append(ids, p.OwnerID)
+	}
+
+	return ids
+}
+
+func (ps PostList) objectIDs() []uint64 {
+	ids := []uint64{}
+
+	for _, p := range ps {
+		ids = append(ids, p.ObjectID)
 	}
 
 	return ids
@@ -545,6 +555,14 @@ func enrichCounts(
 	currentApp *app.App,
 	ps PostList,
 ) error {
+	countsMap, err := reactions.CountMulti(currentApp.Namespace(), reaction.QueryOptions{
+		Deleted:   &defaultDeleted,
+		ObjectIDs: ps.objectIDs(),
+	})
+	if err != nil {
+		return err
+	}
+
 	for _, p := range ps {
 		comments, err := objects.Count(currentApp.Namespace(), object.QueryOptions{
 			ObjectIDs: []uint64{
@@ -558,89 +576,9 @@ func enrichCounts(
 			return err
 		}
 
-		reactionCounts := ReactionCounts{}
-
-		reactionCounts.Angry, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
-			Deleted: &defaultDeleted,
-			ObjectIDs: []uint64{
-				p.ID,
-			},
-			Types: []reaction.Type{
-				reaction.TypeAngry,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-		reactionCounts.Haha, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
-			Deleted: &defaultDeleted,
-			ObjectIDs: []uint64{
-				p.ID,
-			},
-			Types: []reaction.Type{
-				reaction.TypeHaha,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-		reactionCounts.Like, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
-			Deleted: &defaultDeleted,
-			ObjectIDs: []uint64{
-				p.ID,
-			},
-			Types: []reaction.Type{
-				reaction.TypeLike,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-		reactionCounts.Love, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
-			Deleted: &defaultDeleted,
-			ObjectIDs: []uint64{
-				p.ID,
-			},
-			Types: []reaction.Type{
-				reaction.TypeLove,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-		reactionCounts.Sad, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
-			Deleted: &defaultDeleted,
-			ObjectIDs: []uint64{
-				p.ID,
-			},
-			Types: []reaction.Type{
-				reaction.TypeSad,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-		reactionCounts.Wow, err = reactions.Count(currentApp.Namespace(), reaction.QueryOptions{
-			Deleted: &defaultDeleted,
-			ObjectIDs: []uint64{
-				p.ID,
-			},
-			Types: []reaction.Type{
-				reaction.TypeWow,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
 		p.Counts = PostCounts{
 			Comments:       comments,
-			ReactionCounts: reactionCounts,
+			ReactionCounts: countsMap[p.ObjectID],
 		}
 	}
 
