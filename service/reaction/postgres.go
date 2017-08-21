@@ -1,7 +1,6 @@
 package reaction
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -30,16 +29,19 @@ const (
 	pgCountReactions      = `SELECT count(*) FROM %s.reactions %s`
 	pgCountReactionsMulti = `
 		SELECT
+			object_id,
 			type,
 			count(*)
 		FROM
 			%s.reactions
 		WHERE
 			deleted = false
-			AND object_id = $1
+			AND object_id IN (?)
 		GROUP BY
+			object_id,
 			type
 		ORDER BY
+			object_id,
 			type`
 	pgListReactions = `
 		SELECT
@@ -109,69 +111,65 @@ func (s *pgService) Count(ns string, opts QueryOptions) (uint, error) {
 }
 
 func (s *pgService) CountMulti(ns string, opts QueryOptions) (m CountsMap, err error) {
-	tx, err := s.db.Begin()
+	var (
+		countsMap = CountsMap{}
+		ps        = []interface{}{}
+	)
+
+	for _, id := range opts.ObjectIDs {
+		ps = append(ps, id)
+	}
+
+	query, _, err := sqlx.In(pgCountReactionsMulti, ps)
 	if err != nil {
 		return nil, err
 	}
 
-	defer func(tx *sql.Tx) {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}(tx)
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	query = fmt.Sprintf(query, ns)
 
-	countsMap := CountsMap{}
+	rows, err := s.db.Query(query, ps...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	for _, oid := range opts.ObjectIDs {
+	for rows.Next() {
 		var (
-			counts = Counts{}
-			params = []interface{}{oid}
+			objectID uint64
+			t        int
+			count    uint64
 		)
 
-		query := fmt.Sprintf(pgCountReactionsMulti, ns)
-
-		rows, err := tx.Query(query, params...)
+		err := rows.Scan(&objectID, &t, &count)
 		if err != nil {
 			return nil, err
 		}
-		defer rows.Close()
 
-		for rows.Next() {
-			var (
-				t     int
-				count uint64
-			)
-
-			err := rows.Scan(&t, &count)
-			if err != nil {
-				return nil, err
-			}
-
-			switch Type(t) {
-			case TypeAngry:
-				counts.Angry = count
-			case TypeHaha:
-				counts.Haha = count
-			case TypeLike:
-				counts.Like = count
-			case TypeLove:
-				counts.Love = count
-			case TypeSad:
-				counts.Sad = count
-			case TypeWow:
-				counts.Wow = count
-			}
+		counts, ok := countsMap[objectID]
+		if !ok {
+			counts = Counts{}
 		}
 
-		if err := rows.Err(); err != nil {
-			return nil, err
+		switch Type(t) {
+		case TypeAngry:
+			counts.Angry = count
+		case TypeHaha:
+			counts.Haha = count
+		case TypeLike:
+			counts.Like = count
+		case TypeLove:
+			counts.Love = count
+		case TypeSad:
+			counts.Sad = count
+		case TypeWow:
+			counts.Wow = count
 		}
 
-		countsMap[oid] = counts
+		countsMap[objectID] = counts
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
