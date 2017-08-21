@@ -116,6 +116,10 @@ func (s *pgService) CountMulti(ns string, opts QueryOptions) (m CountsMap, err e
 		ps        = []interface{}{}
 	)
 
+	if len(opts.ObjectIDs) == 0 {
+		return countsMap, nil
+	}
+
 	for _, id := range opts.ObjectIDs {
 		ps = append(ps, id)
 	}

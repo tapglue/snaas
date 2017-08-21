@@ -555,6 +555,10 @@ func enrichCounts(
 	currentApp *app.App,
 	ps PostList,
 ) error {
+	if len(ps) == 0 {
+		return nil
+	}
+
 	commentsMap, err := objects.CountMulti(currentApp.Namespace(), ps.IDs()...)
 	if err != nil {
 		return err
@@ -584,40 +588,40 @@ func enrichHasReacted(
 	origin uint64,
 	ps PostList,
 ) error {
-	for _, p := range ps {
-		rs, err := reactions.Query(currentApp.Namespace(), reaction.QueryOptions{
-			Deleted: &defaultDeleted,
-			ObjectIDs: []uint64{
-				p.ID,
-			},
-			OwnerIDs: []uint64{
-				origin,
-			},
-		})
-		if err != nil {
-			return nil
+	if len(ps) == 0 {
+		return nil
+	}
+
+	rs, err := reactions.Query(currentApp.Namespace(), reaction.QueryOptions{
+		Deleted:   &defaultDeleted,
+		ObjectIDs: ps.IDs(),
+		OwnerIDs: []uint64{
+			origin,
+		},
+	})
+	if err != nil {
+		return nil
+	}
+
+	pm := ps.toMap()
+
+	for _, r := range rs {
+		p := pm[r.ObjectID]
+
+		switch r.Type {
+		case reaction.TypeLike:
+			p.HasReacted.Like = true
+		case reaction.TypeLove:
+			p.HasReacted.Love = true
+		case reaction.TypeHaha:
+			p.HasReacted.Haha = true
+		case reaction.TypeWow:
+			p.HasReacted.Wow = true
+		case reaction.TypeSad:
+			p.HasReacted.Sad = true
+		case reaction.TypeAngry:
+			p.HasReacted.Angry = true
 		}
-
-		hasReacted := HasReacted{}
-
-		for _, r := range rs {
-			switch r.Type {
-			case reaction.TypeLike:
-				hasReacted.Like = true
-			case reaction.TypeLove:
-				hasReacted.Love = true
-			case reaction.TypeHaha:
-				hasReacted.Haha = true
-			case reaction.TypeWow:
-				hasReacted.Wow = true
-			case reaction.TypeSad:
-				hasReacted.Sad = true
-			case reaction.TypeAngry:
-				hasReacted.Angry = true
-			}
-		}
-
-		p.HasReacted = hasReacted
 	}
 
 	return nil
