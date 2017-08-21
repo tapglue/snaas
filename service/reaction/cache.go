@@ -51,7 +51,7 @@ func (s *cacheService) Count(ns string, opts QueryOptions) (uint, error) {
 }
 
 func (s *cacheService) CountMulti(ns string, opts QueryOptions) (CountsMap, error) {
-	return nil, fmt.Errorf("cacheService.CountMulti not implemented")
+	return s.next.CountMulti(ns, opts)
 }
 
 func (s *cacheService) Put(ns string, input *Reaction) (*Reaction, error) {
