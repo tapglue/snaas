@@ -866,7 +866,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.UserLogout(
-				core.UserLogout(sessions),
+				core.UserLogout(devices, sessions),
 			),
 		),
 	)

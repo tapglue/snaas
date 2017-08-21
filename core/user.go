@@ -9,6 +9,7 @@ import (
 	"github.com/tapglue/snaas/platform/generate"
 	"github.com/tapglue/snaas/service/app"
 	"github.com/tapglue/snaas/service/connection"
+	"github.com/tapglue/snaas/service/device"
 	"github.com/tapglue/snaas/service/invite"
 	"github.com/tapglue/snaas/service/session"
 	"github.com/tapglue/snaas/service/user"
@@ -312,6 +313,7 @@ type UserLogoutFunc func(
 
 // UserLogout destroys the session stored under token.
 func UserLogout(
+	devices device.Service,
 	sessions session.Service,
 ) UserLogoutFunc {
 	return func(
@@ -340,7 +342,34 @@ func UserLogout(
 		s.Enabled = false
 
 		_, err = sessions.Put(currentApp.Namespace(), s)
-		return err
+		if err != nil {
+			return err
+		}
+
+		if s.DeviceID == "" {
+			return nil
+		}
+
+		ds, err := devices.Query(currentApp.Namespace(), device.QueryOptions{
+			Deleted: &defaultDeleted,
+			DeviceIDs: []string{
+				s.DeviceID,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		for _, d := range ds {
+			d.Deleted = true
+
+			_, err = devices.Put(currentApp.Namespace(), d)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 }
 
