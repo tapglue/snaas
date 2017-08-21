@@ -73,6 +73,32 @@ func TestRedisCountServiceGet(t *testing.T) {
 	}
 }
 
+func TestRedisCountServiceGetNegative(t *testing.T) {
+	var (
+		key       = "get-negative"
+		namespace = "counter"
+		pool      = newPool()
+		s         = RedisCountService(pool)
+	)
+
+	con := pool.Get()
+	defer con.Close()
+
+	_, err := con.Do(
+		predis.CommandSet,
+		prefixKey(namespace, key),
+		-1,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.Get(namespace, key)
+	if have, want := err, ErrKeyNotFound; !IsKeyNotFound(err) {
+		t.Errorf("have %v, want %v", have, want)
+	}
+}
+
 func TestRedisCountServiceIncr(t *testing.T) {
 	var (
 		key       = "incr"

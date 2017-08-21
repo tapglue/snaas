@@ -50,7 +50,7 @@ func (s *redisCountService) Get(ns, key string) (int, error) {
 	var (
 		con = s.pool.Get()
 
-		count uint64
+		count int64
 	)
 	defer con.Close()
 
@@ -66,6 +66,10 @@ func (s *redisCountService) Get(ns, key string) (int, error) {
 	_, err = redis.Scan([]interface{}{res}, &count)
 	if err != nil {
 		return errCode, fmt.Errorf("cache scan failed: %s", err)
+	}
+
+	if count < 0 {
+		return errCode, wrapError(ErrKeyNotFound, "%s.%s", ns, key)
 	}
 
 	return int(count), nil
