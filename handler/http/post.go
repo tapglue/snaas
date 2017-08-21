@@ -445,7 +445,7 @@ func (p *payloadPosts) MarshalJSON() ([]byte, error) {
 }
 
 type postCounts struct {
-	Comments  int            `json:"comments"`
+	Comments  uint64         `json:"comments"`
 	Likes     int            `json:"likes"`
 	Reactions reactionCounts `json:"reactions"`
 }

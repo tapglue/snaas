@@ -37,7 +37,7 @@ func TestCommentCreate(t *testing.T) {
 		ID:    &created.ID,
 		Owned: &defaultOwned,
 		Types: []string{
-			TypeComment,
+			object.TypeComment,
 		},
 	})
 	if err != nil {
@@ -121,7 +121,7 @@ func TestCommentDelete(t *testing.T) {
 		ID:      &created.ID,
 		Owned:   &defaultOwned,
 		Types: []string{
-			TypeComment,
+			object.TypeComment,
 		},
 	})
 	if err != nil {
@@ -245,7 +245,7 @@ func TestCommentUpdate(t *testing.T) {
 		ID:    &created.ID,
 		Owned: &defaultOwned,
 		Types: []string{
-			TypeComment,
+			object.TypeComment,
 		},
 	})
 	if err != nil {
@@ -303,7 +303,7 @@ func testComment(ownerID uint64, post *object.Object) *object.Object {
 		ObjectID:   post.ID,
 		OwnerID:    ownerID,
 		Owned:      true,
-		Type:       TypeComment,
+		Type:       object.TypeComment,
 		Visibility: post.Visibility,
 	}
 }
@@ -319,7 +319,7 @@ func testCommentSet(ownerID uint64, post *object.Object) []*object.Object {
 			ObjectID:   post.ID,
 			OwnerID:    ownerID,
 			Owned:      true,
-			Type:       TypeComment,
+			Type:       object.TypeComment,
 			Visibility: post.Visibility,
 		},
 		{
@@ -331,7 +331,7 @@ func testCommentSet(ownerID uint64, post *object.Object) []*object.Object {
 			ObjectID:   post.ID,
 			OwnerID:    ownerID + 1,
 			Owned:      true,
-			Type:       TypeComment,
+			Type:       object.TypeComment,
 			Visibility: post.Visibility,
 		},
 		{
@@ -343,7 +343,7 @@ func testCommentSet(ownerID uint64, post *object.Object) []*object.Object {
 			ObjectID:   post.ID,
 			OwnerID:    ownerID - 1,
 			Owned:      true,
-			Type:       TypeComment,
+			Type:       object.TypeComment,
 			Visibility: post.Visibility,
 		},
 		{
@@ -355,7 +355,7 @@ func testCommentSet(ownerID uint64, post *object.Object) []*object.Object {
 			ObjectID:   post.ID,
 			OwnerID:    ownerID,
 			Owned:      true,
-			Type:       TypeComment,
+			Type:       object.TypeComment,
 			Visibility: post.Visibility,
 		},
 		{
@@ -367,7 +367,7 @@ func testCommentSet(ownerID uint64, post *object.Object) []*object.Object {
 			ObjectID:   post.ID,
 			OwnerID:    ownerID,
 			Owned:      true,
-			Type:       TypeComment,
+			Type:       object.TypeComment,
 			Visibility: post.Visibility,
 		},
 	}

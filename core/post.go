@@ -35,7 +35,7 @@ type Post struct {
 
 // PostCounts bundles all connected entity counts.
 type PostCounts struct {
-	Comments       int
+	Comments       uint64
 	Likes          int
 	ReactionCounts reaction.Counts
 }
@@ -555,7 +555,12 @@ func enrichCounts(
 	currentApp *app.App,
 	ps PostList,
 ) error {
-	countsMap, err := reactions.CountMulti(currentApp.Namespace(), reaction.QueryOptions{
+	commentsMap, err := objects.CountMulti(currentApp.Namespace(), ps.objectIDs()...)
+	if err != nil {
+		return err
+	}
+
+	reactionsMap, err := reactions.CountMulti(currentApp.Namespace(), reaction.QueryOptions{
 		Deleted:   &defaultDeleted,
 		ObjectIDs: ps.objectIDs(),
 	})
@@ -564,21 +569,9 @@ func enrichCounts(
 	}
 
 	for _, p := range ps {
-		comments, err := objects.Count(currentApp.Namespace(), object.QueryOptions{
-			ObjectIDs: []uint64{
-				p.ID,
-			},
-			Types: []string{
-				TypeComment,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
 		p.Counts = PostCounts{
-			Comments:       comments,
-			ReactionCounts: countsMap[p.ObjectID],
+			Comments:       commentsMap[p.ObjectID].Comments,
+			ReactionCounts: reactionsMap[p.ObjectID],
 		}
 	}
 

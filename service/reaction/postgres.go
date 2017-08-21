@@ -130,12 +130,8 @@ func (s *pgService) CountMulti(ns string, opts QueryOptions) (m CountsMap, err e
 
 		query := fmt.Sprintf(pgCountReactionsMulti, ns)
 
-		rows, err := s.db.Query(query, params...)
+		rows, err := tx.Query(query, params...)
 		if err != nil {
-			if rerr := tx.Rollback(); rerr != nil {
-				return nil, err
-			}
-
 			return nil, err
 		}
 		defer rows.Close()
@@ -168,10 +164,6 @@ func (s *pgService) CountMulti(ns string, opts QueryOptions) (m CountsMap, err e
 		}
 
 		if err := rows.Err(); err != nil {
-			if rerr := tx.Rollback(); rerr != nil {
-				return nil, err
-			}
-
 			return nil, err
 		}
 

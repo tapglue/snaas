@@ -48,6 +48,14 @@ func (s *instrumentService) Count(ns string, opts QueryOptions) (count int, err 
 	return s.next.Count(ns, opts)
 }
 
+func (s *instrumentService) CountMulti(ns string, objectIDs ...uint64) (m CountsMap, err error) {
+	defer func(begin time.Time) {
+		s.track("CountMulti", ns, begin, err)
+	}(time.Now())
+
+	return s.next.CountMulti(ns, objectIDs...)
+}
+
 func (s *instrumentService) Put(ns string, object *Object) (o *Object, err error) {
 	defer func(begin time.Time) {
 		s.track("put", ns, begin, err)

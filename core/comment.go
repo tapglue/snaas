@@ -8,9 +8,6 @@ import (
 )
 
 const (
-	// TypeComment identifies a comment object.
-	TypeComment = "tg_comment"
-
 	attachmentContent = "content"
 )
 
@@ -76,7 +73,7 @@ func CommentCreate(
 			OwnerID:    origin.UserID,
 			Owned:      true,
 			Private:    input.Private,
-			Type:       TypeComment,
+			Type:       object.TypeComment,
 			Visibility: post.Visibility,
 		}
 
@@ -120,7 +117,7 @@ func CommentDelete(
 				origin,
 			},
 			Types: []string{
-				TypeComment,
+				object.TypeComment,
 			},
 			Owned: &defaultOwned,
 		})
@@ -188,7 +185,7 @@ func CommentList(
 				postID,
 			},
 			Types: []string{
-				TypeComment,
+				object.TypeComment,
 			},
 			Owned: &defaultOwned,
 		})
@@ -237,7 +234,7 @@ func CommentRetrieve(
 				origin,
 			},
 			Types: []string{
-				TypeComment,
+				object.TypeComment,
 			},
 			Owned: &defaultOwned,
 		})
@@ -286,7 +283,7 @@ func CommentUpdate(
 			},
 			Owned: &defaultOwned,
 			Types: []string{
-				TypeComment,
+				object.TypeComment,
 			},
 		})
 		if err != nil {
@@ -316,7 +313,7 @@ func CommentUpdate(
 
 // IsComment indicates if Object is a comment.
 func IsComment(o *object.Object) bool {
-	if o.Type != TypeComment {
+	if o.Type != object.TypeComment {
 		return false
 	}
 

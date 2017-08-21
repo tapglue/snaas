@@ -20,6 +20,10 @@ func (s *sourcingService) Count(ns string, opts QueryOptions) (int, error) {
 	return s.service.Count(ns, opts)
 }
 
+func (s *sourcingService) CountMulti(ns string, objectIDs ...uint64) (m CountsMap, err error) {
+	return s.service.CountMulti(ns, objectIDs...)
+}
+
 func (s *sourcingService) Put(
 	ns string,
 	input *Object,

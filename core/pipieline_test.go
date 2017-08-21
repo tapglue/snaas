@@ -539,7 +539,7 @@ func TestPipelineObjectCondObjectOwner(t *testing.T) {
 		Criteria: &rule.CriteriaObject{
 			New: &object.QueryOptions{
 				Owned: &defaultOwned,
-				Types: []string{TypeComment},
+				Types: []string{object.TypeComment},
 			},
 			Old: nil,
 		},
@@ -623,7 +623,7 @@ func TestPipelineObjectCondOwner(t *testing.T) {
 		Criteria: &rule.CriteriaObject{
 			New: &object.QueryOptions{
 				Owned: &defaultOwned,
-				Types: []string{TypeComment},
+				Types: []string{object.TypeComment},
 			},
 			Old: nil,
 		},

@@ -50,6 +50,10 @@ func (s *cacheService) Count(ns string, opts QueryOptions) (int, error) {
 	return count, err
 }
 
+func (s *cacheService) CountMulti(ns string, objectIDs ...uint64) (m CountsMap, err error) {
+	return s.next.CountMulti(ns, objectIDs...)
+}
+
 func (s *cacheService) Put(ns string, input *Object) (output *Object, err error) {
 	key := cacheCountKey(QueryOptions{
 		Types: []string{

@@ -100,6 +100,65 @@ func (s *pgService) Count(ns string, opts QueryOptions) (int, error) {
 	return s.countObjects(ns, where, params...)
 }
 
+func (s *pgService) CountMulti(
+	ns string,
+	objectIDs ...uint64,
+) (m CountsMap, err error) {
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func(tx *sqlx.Tx) {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}(tx)
+
+	var (
+		countsMap = CountsMap{}
+		owned     = true
+	)
+
+	for _, oid := range objectIDs {
+		where, params, err := convertOpts(QueryOptions{
+			Deleted: false,
+			ObjectIDs: []uint64{
+				oid,
+			},
+			Owned: &owned,
+			Types: []string{
+				TypeComment,
+			},
+		}, orderNone)
+		if err != nil {
+			return nil, err
+		}
+
+		var (
+			query = fmt.Sprintf(pgCountObjects, ns, where)
+
+			count uint64
+		)
+
+		err = tx.Get(&count, query, params...)
+		if err != nil {
+			return nil, err
+		}
+
+		countsMap[oid] = Counts{
+			Comments: uint64(count),
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return countsMap, nil
+}
+
 func (s *pgService) Put(ns string, object *Object) (*Object, error) {
 	var (
 		now   = time.Now().UTC()

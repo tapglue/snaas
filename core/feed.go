@@ -1053,7 +1053,7 @@ func sourceComment(
 			ObjectIDs: postIDs,
 			Owned:     &defaultOwned,
 			Types: []string{
-				TypeComment,
+				object.TypeComment,
 			},
 		})
 		if err != nil {
@@ -1075,7 +1075,7 @@ func sourceComment(
 				ID:         id,
 				ObjectID:   comment.ObjectID,
 				Owned:      true,
-				Type:       TypeComment,
+				Type:       object.TypeComment,
 				UserID:     comment.OwnerID,
 				Visibility: event.VisibilityPrivate,
 				CreatedAt:  comment.CreatedAt,

@@ -19,6 +19,10 @@ func TestPostgresServiceCount(t *testing.T) {
 	testServiceCount(t, preparePostgres)
 }
 
+func TestPostgresServiceCountMulti(t *testing.T) {
+	testServiceCountMulti(t, preparePostgres)
+}
+
 func TestPostgresServicePut(t *testing.T) {
 	var (
 		namespace = "service_put"

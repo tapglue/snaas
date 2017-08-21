@@ -27,6 +27,8 @@ const (
 	StateDeclined
 )
 
+const TypeComment = "tg_comment"
+
 // Visibility variants available for Objects.
 const (
 	VisibilityPrivate Visibility = (iota + 1) * 10
@@ -109,6 +111,14 @@ type Contents map[string]string
 func (c Contents) Validate() error {
 	return nil
 }
+
+// Counts bundles all Object counts by type.
+type Counts struct {
+	Comments uint64
+}
+
+// CountsMap is the association of an object id to Counts.
+type CountsMap map[uint64]Counts
 
 // List is an Object collection.
 type List []*Object
@@ -300,6 +310,7 @@ type Service interface {
 	service.Lifecycle
 
 	Count(namespace string, opts QueryOptions) (int, error)
+	CountMulti(namespace string, objectIds ...uint64) (CountsMap, error)
 	Put(namespace string, object *Object) (*Object, error)
 	Query(namespace string, opts QueryOptions) (List, error)
 }

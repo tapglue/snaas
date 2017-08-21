@@ -1,6 +1,8 @@
 package object
 
 import (
+	"math/rand"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -275,6 +277,60 @@ func testServiceCount(t *testing.T, p prepareFunc) {
 	}
 
 	if have, want := count, 7; have != want {
+		t.Errorf("have %v, want %v", have, want)
+	}
+}
+
+func testServiceCountMulti(t *testing.T, p prepareFunc) {
+	var (
+		namespace = "service_count_multi"
+		service   = p(namespace, t)
+		objectIDs = []uint64{
+			uint64(rand.Int63()),
+			uint64(rand.Int63()),
+			uint64(rand.Int63()),
+		}
+		ownerID = uint64(rand.Int63())
+		want    = CountsMap{}
+	)
+
+	for _, oid := range objectIDs {
+		article := *testArticle
+
+		article.ObjectID = oid
+		article.OwnerID = ownerID
+
+		_, err := service.Put(namespace, &article)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		it := rand.Intn(12)
+
+		for i := 0; i < it; i++ {
+			_, err = service.Put(namespace, &Object{
+				ObjectID:   oid,
+				Owned:      true,
+				OwnerID:    uint64(rand.Int63()),
+				Type:       TypeComment,
+				Visibility: VisibilityPublic,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		want[oid] = Counts{
+			Comments: uint64(it),
+		}
+	}
+
+	have, err := service.CountMulti(namespace, objectIDs...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !reflect.DeepEqual(have, want) {
 		t.Errorf("have %v, want %v", have, want)
 	}
 }

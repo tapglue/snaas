@@ -1,6 +1,7 @@
 package object
 
 import (
+	"fmt"
 	"math"
 	"sort"
 	"time"
@@ -30,6 +31,10 @@ func (s *memService) Count(ns string, opts QueryOptions) (int, error) {
 	}
 
 	return len(filterList(listFromMap(bucket), opts)), nil
+}
+
+func (s *memService) CountMulti(ns string, objectIDs ...uint64) (m CountsMap, err error) {
+	return nil, fmt.Errorf("memService.CountMulti not implemented")
 }
 
 func (s *memService) Put(ns string, object *Object) (*Object, error) {
