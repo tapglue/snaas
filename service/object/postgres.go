@@ -26,6 +26,19 @@ const (
 
 	pgCountObjects = `SELECT count(json_data) FROM %s.objects
 		%s`
+	pgCountObjectsMulti = `
+		SELECT
+			json_data->>'object_id',
+			count(*)
+		FROM
+			%s.objects
+		WHERE
+			(json_data->>'deleted')::BOOL = false
+			AND (json_data->>'object_id')::BIGINT IN (?)
+			AND (json_data->>'owned')::BOOL = true
+			AND (json_data->>'type')::TEXT = 'tg_comment'
+		GROUP BY
+			json_data->>'object_id'`
 	pgListObjects = `SELECT json_data FROM %s.objects
 		%s`
 
@@ -104,55 +117,50 @@ func (s *pgService) CountMulti(
 	ns string,
 	objectIDs ...uint64,
 ) (m CountsMap, err error) {
-	tx, err := s.db.Beginx()
+	var (
+		countsMap = CountsMap{}
+		ps        = []interface{}{}
+	)
+
+	if len(objectIDs) == 0 {
+		return countsMap, nil
+	}
+
+	for _, id := range objectIDs {
+		ps = append(ps, id)
+	}
+
+	query, _, err := sqlx.In(pgCountObjectsMulti, ps)
 	if err != nil {
 		return nil, err
 	}
 
-	defer func(tx *sqlx.Tx) {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}(tx)
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	query = fmt.Sprintf(query, ns)
 
-	var (
-		countsMap = CountsMap{}
-		owned     = true
-	)
+	rows, err := s.db.Query(query, ps...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	for _, oid := range objectIDs {
-		where, params, err := convertOpts(QueryOptions{
-			Deleted: false,
-			ObjectIDs: []uint64{
-				oid,
-			},
-			Owned: &owned,
-			Types: []string{
-				TypeComment,
-			},
-		}, orderNone)
-		if err != nil {
-			return nil, err
-		}
-
+	for rows.Next() {
 		var (
-			query = fmt.Sprintf(pgCountObjects, ns, where)
-
-			count uint64
+			objectID uint64
+			count    uint64
 		)
 
-		err = tx.Get(&count, query, params...)
+		err := rows.Scan(&objectID, &count)
 		if err != nil {
 			return nil, err
 		}
 
-		countsMap[oid] = Counts{
-			Comments: uint64(count),
+		countsMap[objectID] = Counts{
+			Comments: count,
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
