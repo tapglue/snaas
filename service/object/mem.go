@@ -1,7 +1,6 @@
 package object
 
 import (
-	"fmt"
 	"math"
 	"sort"
 	"time"
@@ -34,7 +33,35 @@ func (s *memService) Count(ns string, opts QueryOptions) (int, error) {
 }
 
 func (s *memService) CountMulti(ns string, objectIDs ...uint64) (m CountsMap, err error) {
-	return nil, fmt.Errorf("memService.CountMulti not implemented")
+	if err := s.Setup(ns); err != nil {
+		return nil, err
+	}
+
+	countsMap := CountsMap{}
+
+	for _, oid := range objectIDs {
+		counts := Counts{}
+
+		for _, o := range s.objects[ns] {
+			if o.Deleted {
+				continue
+			}
+
+			if o.ObjectID != oid {
+				continue
+			}
+
+			if o.Type != TypeComment {
+				continue
+			}
+
+			counts.Comments++
+		}
+
+		countsMap[oid] = counts
+	}
+
+	return countsMap, nil
 }
 
 func (s *memService) Put(ns string, object *Object) (*Object, error) {
