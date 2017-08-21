@@ -555,14 +555,14 @@ func enrichCounts(
 	currentApp *app.App,
 	ps PostList,
 ) error {
-	commentsMap, err := objects.CountMulti(currentApp.Namespace(), ps.objectIDs()...)
+	commentsMap, err := objects.CountMulti(currentApp.Namespace(), ps.IDs()...)
 	if err != nil {
 		return err
 	}
 
 	reactionsMap, err := reactions.CountMulti(currentApp.Namespace(), reaction.QueryOptions{
 		Deleted:   &defaultDeleted,
-		ObjectIDs: ps.objectIDs(),
+		ObjectIDs: ps.IDs(),
 	})
 	if err != nil {
 		return err
@@ -570,8 +570,8 @@ func enrichCounts(
 
 	for _, p := range ps {
 		p.Counts = PostCounts{
-			Comments:       commentsMap[p.ObjectID].Comments,
-			ReactionCounts: reactionsMap[p.ObjectID],
+			Comments:       commentsMap[p.ID].Comments,
+			ReactionCounts: reactionsMap[p.ID],
 		}
 	}
 
