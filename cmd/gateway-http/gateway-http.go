@@ -397,7 +397,7 @@ func main() {
 	// Combine object service and source.
 	objects = object.SourcingServiceMiddleware(objectSource)(objects)
 	// Wrap service with caching
-	// objects = object.CacheServiceMiddleware(objectCountsCache)(objects)
+	objects = object.CacheServiceMiddleware(objectCountsCache)(objects)
 
 	var reactions reaction.Service
 	reactions = reaction.PostgresService(pgClient)
@@ -412,7 +412,7 @@ func main() {
 	// Combine reaction service and source.
 	reactions = reaction.SourcingServiceMiddleware(reactionSource)(reactions)
 	// Wrap service with caching
-	// reactions = reaction.CacheServiceMiddleware(reactionCountsCache)(reactions)
+	reactions = reaction.CacheServiceMiddleware(reactionCountsCache)(reactions)
 
 	var sessions session.Service
 	sessions = session.PostgresService(pgClient)
