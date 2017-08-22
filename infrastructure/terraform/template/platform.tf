@@ -170,7 +170,7 @@ resource "aws_elb" "monitoring" {
 }
 
 resource "aws_autoscaling_group" "service" {
-  desired_capacity          = 5
+  desired_capacity          = 3
   health_check_grace_period = 60
   health_check_type         = "EC2"
   launch_configuration      = "${aws_launch_configuration.service.name}"
