@@ -800,11 +800,6 @@ func login(
 		return nil, err
 	}
 
-	err = enrichConnectionCounts(connections, users, currentApp, u)
-	if err != nil {
-		return nil, err
-	}
-
 	return u, nil
 }
 
