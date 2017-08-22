@@ -25,6 +25,10 @@ func (s *memService) Count(ns string, opts QueryOptions) (int, error) {
 	return len(filterMap(s.cons[ns], opts)), nil
 }
 
+func (s *memService) Friends(ns string, origin uint64) (List, error) {
+	return nil, fmt.Errorf("memService.Friends not implemented")
+}
+
 func (s *memService) Put(ns string, con *Connection) (*Connection, error) {
 	if err := s.Setup(ns); err != nil {
 		return nil, err

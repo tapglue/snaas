@@ -51,6 +51,14 @@ func (s *instrumentService) Count(
 	return s.next.Count(ns, opts)
 }
 
+func (s *instrumentService) Friends(ns string, origin uint64) (ls List, err error) {
+	defer func(begin time.Time) {
+		s.track("Friends", ns, begin, err)
+	}(time.Now())
+
+	return s.next.Friends(ns, origin)
+}
+
 func (s *instrumentService) Put(
 	ns string,
 	input *Connection,

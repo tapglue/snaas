@@ -131,6 +131,21 @@ func (l List) Swap(i, j int) {
 	l[i], l[j] = l[j], l[i]
 }
 
+// OtherIDs returns the user ids not being the origin.
+func (l List) OtherIDs(origin uint64) []uint64 {
+	is := []uint64{}
+
+	for _, c := range l {
+		if c.FromID == origin {
+			is = append(is, c.ToID)
+		} else {
+			is = append(is, c.FromID)
+		}
+	}
+
+	return is
+}
+
 // ToIDs returns the extracted ToID of all connections as list.
 func (l List) ToIDs() []uint64 {
 	ids := []uint64{}
@@ -164,6 +179,7 @@ type Service interface {
 	service.Lifecycle
 
 	Count(namespace string, opts QueryOptions) (int, error)
+	Friends(namespace string, origin uint64) (List, error)
 	Put(namespace string, connection *Connection) (*Connection, error)
 	Query(namespace string, opts QueryOptions) (List, error)
 }

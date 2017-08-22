@@ -33,6 +33,19 @@ const (
 		%s`
 	pgListConnections = `SELECT json_data FROM %s.connections
 		%s`
+	pgListFriends = `
+		SELECT
+			json_data
+		FROM
+			%s.connections
+		WHERE
+			(json_data->>'enabled')::BOOL = true
+			AND (json_data->>'state')::TEXT = 'confirmed'
+		    AND (json_data->>'type')::TEXT = 'friend'
+		    AND (
+		        (json_data->>'user_from_id')::BIGINT = $1
+		        OR (json_data->>'user_to_id')::BIGINT = $1
+		    )`
 
 	pgClauseAfter   = `json_data->>'updated_at' > ?`
 	pgClauseBefore  = `json_data->>'updated_at' < ?`
@@ -120,6 +133,58 @@ func (s *pgService) Count(ns string, opts QueryOptions) (int, error) {
 	}
 
 	return s.countConnections(ns, where, params...)
+}
+
+func (s *pgService) Friends(ns string, origin uint64) (List, error) {
+	var (
+		params = []interface{}{origin}
+		query  = fmt.Sprintf(pgListFriends, ns)
+	)
+
+	rows, err := s.db.Query(query, params...)
+	if err != nil {
+		if pg.IsRelationNotFound(pg.WrapError(err)) {
+			if err := s.Setup(ns); err != nil {
+				return nil, err
+			}
+
+			rows, err = s.db.Query(query, params...)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return nil, err
+	}
+	defer rows.Close()
+
+	cs := List{}
+
+	for rows.Next() {
+		var (
+			con = &Connection{}
+
+			raw []byte
+		)
+
+		err := rows.Scan(&raw)
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal(raw, con)
+		if err != nil {
+			return nil, err
+		}
+
+		cs = append(cs, con)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return cs, nil
 }
 
 func (s *pgService) Put(ns string, con *Connection) (*Connection, error) {

@@ -565,17 +565,20 @@ func FeedPosts(
 		origin uint64,
 		opts object.QueryOptions,
 	) (*Feed, error) {
-		am, err := neighbours(connections, users, currentApp, origin, 0, event.QueryOptions{
-			Before: opts.Before,
-			Limit:  opts.Limit,
+		fs, err := connections.Friends(currentApp.Namespace(), origin)
+		if err != nil {
+			return nil, err
+		}
+
+		us, err := users.Query(currentApp.Namespace(), user.QueryOptions{
+			Enabled: &defaultEnabled,
+			IDs:     fs.OtherIDs(origin),
 		})
 		if err != nil {
 			return nil, err
 		}
 
-		neighbours := am.filterFollowers(origin)
-
-		ps, err := connectionPosts(objects, currentApp, opts, neighbours.userIDs()...)
+		ps, err := connectionPosts(objects, currentApp, opts, fs.OtherIDs(origin)...)
 		if err != nil {
 			return nil, err
 		}
@@ -600,11 +603,6 @@ func FeedPosts(
 			ps = ps[:opts.Limit]
 		}
 
-		um, err := fillupUsersForPosts(users, currentApp, origin, am.users().ToMap(), ps)
-		if err != nil {
-			return nil, err
-		}
-
 		err = enrichCounts(objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
@@ -615,11 +613,26 @@ func FeedPosts(
 			return nil, err
 		}
 
-		for _, u := range um {
-			err = enrichRelation(connections, currentApp, origin, u)
-			if err != nil {
-				return nil, err
+		um, err := fillupUsersForPosts(users, currentApp, origin, us.ToMap(), ps)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, c := range fs {
+			var id uint64
+
+			if c.FromID == origin {
+				id = c.ToID
+			} else {
+				id = c.FromID
 			}
+
+			u, ok := um[id]
+			if !ok {
+				continue
+			}
+
+			u.IsFriend = true
 		}
 
 		return &Feed{

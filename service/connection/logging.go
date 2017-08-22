@@ -44,6 +44,26 @@ func (s *logService) Count(ns string, opts QueryOptions) (count int, err error) 
 	return s.next.Count(ns, opts)
 }
 
+func (s *logService) Friends(ns string, origin uint64) (list List, err error) {
+	defer func(begin time.Time) {
+		ps := []interface{}{
+			"conenction_len", len(list),
+			"duration_ns", time.Since(begin).Nanoseconds(),
+			"method", "Friends",
+			"namespace", ns,
+			"origin", origin,
+		}
+
+		if err != nil {
+			ps = append(ps, "err", err)
+		}
+
+		_ = s.logger.Log(ps...)
+	}(time.Now())
+
+	return s.next.Friends(ns, origin)
+}
+
 func (s *logService) Put(
 	ns string,
 	input *Connection,

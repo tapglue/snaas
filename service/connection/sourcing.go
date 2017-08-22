@@ -20,6 +20,10 @@ func (s *sourcingService) Count(ns string, opts QueryOptions) (int, error) {
 	return s.service.Count(ns, opts)
 }
 
+func (s *sourcingService) Friends(ns string, origin uint64) (List, error) {
+	return s.service.Friends(ns, origin)
+}
+
 func (s *sourcingService) Put(
 	ns string,
 	input *Connection,
