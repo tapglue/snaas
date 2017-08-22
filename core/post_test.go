@@ -7,7 +7,6 @@ import (
 
 	"github.com/tapglue/snaas/service/app"
 	"github.com/tapglue/snaas/service/connection"
-	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
 	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/user"
@@ -137,11 +136,10 @@ func TestPostListAll(t *testing.T) {
 	var (
 		app, owner  = testSetupPost()
 		connections = connection.MemService()
-		events      = event.MemService()
 		objects     = object.MemService()
 		reactions   = reaction.MemService()
 		users       = user.MemService()
-		fn          = PostListAll(connections, events, objects, reactions, users)
+		fn          = PostListAll(connections, objects, reactions, users)
 	)
 
 	feed, err := fn(app, owner.ID, object.QueryOptions{})
@@ -174,11 +172,10 @@ func TestPostListUser(t *testing.T) {
 	var (
 		app, owner  = testSetupPost()
 		connections = connection.MemService()
-		events      = event.MemService()
 		objects     = object.MemService()
 		reactions   = reaction.MemService()
 		users       = user.MemService()
-		fn          = PostListUser(connections, events, objects, reactions, users)
+		fn          = PostListUser(connections, objects, reactions, users)
 	)
 
 	feed, err := fn(app, owner.ID, owner.ID, object.QueryOptions{})
@@ -211,11 +208,10 @@ func TestPostRetrieve(t *testing.T) {
 	var (
 		app, owner  = testSetupPost()
 		connections = connection.MemService()
-		events      = event.MemService()
 		objects     = object.MemService()
 		reactions   = reaction.MemService()
 		post        = testPost(owner.ID)
-		fn          = PostRetrieve(connections, events, objects, reactions)
+		fn          = PostRetrieve(connections, objects, reactions)
 	)
 
 	created, err := objects.Put(app.Namespace(), post.Object)
