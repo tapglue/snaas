@@ -626,7 +626,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.FeedPosts(
-				core.FeedPosts(connections, events, objects, reactions, users),
+				core.FeedPosts(connections, objects, reactions, users),
 			),
 		),
 	)
@@ -664,7 +664,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.PostRetrieve(
-				core.PostRetrieve(connections, events, objects, reactions),
+				core.PostRetrieve(connections, objects, reactions),
 			),
 		),
 	)
@@ -682,7 +682,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.PostListAll(
-				core.PostListAll(connections, events, objects, reactions, users),
+				core.PostListAll(connections, objects, reactions, users),
 			),
 		),
 	)
@@ -691,7 +691,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.PostListMe(
-				core.PostListUser(connections, events, objects, reactions, users),
+				core.PostListUser(connections, objects, reactions, users),
 			),
 		),
 	)
@@ -700,7 +700,7 @@ func main() {
 		handler.Wrap(
 			withUser,
 			handler.PostList(
-				core.PostListUser(connections, events, objects, reactions, users),
+				core.PostListUser(connections, objects, reactions, users),
 			),
 		),
 	)

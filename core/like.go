@@ -308,7 +308,7 @@ func LikesUser(
 
 		ps = postsForLikes(ls, ps.toMap())
 
-		err = enrichCounts(events, objects, reactions, currentApp, ps)
+		err = enrichCounts(objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -365,6 +365,37 @@ func constrainLikeRestriction(restrictions *object.Restrictions) error {
 			ErrUnauthorized,
 			"likes not allowed for this post",
 		)
+	}
+
+	return nil
+}
+
+func enrichIsLiked(
+	events event.Service,
+	currentApp *app.App,
+	userID uint64,
+	ps PostList,
+) error {
+	for _, p := range ps {
+		es, err := events.Query(currentApp.Namespace(), event.QueryOptions{
+			Enabled: &defaultEnabled,
+			ObjectIDs: []uint64{
+				p.ID,
+			},
+			Types: []string{
+				TypeLike,
+			},
+			UserIDs: []uint64{
+				userID,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		if len(es) == 1 {
+			p.IsLiked = true
+		}
 	}
 
 	return nil

@@ -257,17 +257,12 @@ func FeedEvents(
 			return nil, err
 		}
 
-		err = enrichCounts(events, objects, reactions, currentApp, ps)
+		err = enrichCounts(objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
 
 		err = enrichHasReacted(reactions, currentApp, origin, ps)
-		if err != nil {
-			return nil, err
-		}
-
-		err = enrichIsLiked(events, currentApp, origin, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -383,17 +378,12 @@ func FeedNews(
 			return nil, err
 		}
 
-		err = enrichCounts(events, objects, reactions, currentApp, ps)
+		err = enrichCounts(objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
 
 		err = enrichHasReacted(reactions, currentApp, origin, ps)
-		if err != nil {
-			return nil, err
-		}
-
-		err = enrichIsLiked(events, currentApp, origin, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -445,17 +435,12 @@ func FeedNews(
 			return nil, err
 		}
 
-		err = enrichCounts(events, objects, reactions, currentApp, ps)
+		err = enrichCounts(objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
 
 		err = enrichHasReacted(reactions, currentApp, origin, ps)
-		if err != nil {
-			return nil, err
-		}
-
-		err = enrichIsLiked(events, currentApp, origin, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -540,7 +525,7 @@ func FeedNotificationsSelf(
 			return nil, err
 		}
 
-		err = enrichCounts(events, objects, reactions, currentApp, ps)
+		err = enrichCounts(objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -571,7 +556,6 @@ type FeedPostsFunc func(
 // FeedPosts returns the posts from the interest and social graph of the given user.
 func FeedPosts(
 	connections connection.Service,
-	events event.Service,
 	objects object.Service,
 	reactions reaction.Service,
 	users user.Service,
@@ -621,7 +605,7 @@ func FeedPosts(
 			return nil, err
 		}
 
-		err = enrichCounts(events, objects, reactions, currentApp, ps)
+		err = enrichCounts(objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}

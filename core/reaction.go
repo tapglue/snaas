@@ -190,7 +190,7 @@ func ReactionListPost(
 			}
 		}
 
-		err = enrichCounts(events, objects, reactions, currentApp, PostList{p})
+		err = enrichCounts(objects, reactions, currentApp, PostList{p})
 		if err != nil {
 			return nil, err
 		}

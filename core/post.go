@@ -3,7 +3,6 @@ package core
 import (
 	"github.com/tapglue/snaas/service/app"
 	"github.com/tapglue/snaas/service/connection"
-	"github.com/tapglue/snaas/service/event"
 	"github.com/tapglue/snaas/service/object"
 	"github.com/tapglue/snaas/service/reaction"
 	"github.com/tapglue/snaas/service/user"
@@ -245,7 +244,6 @@ type PostListAllFunc func(
 // PostListAll returns all objects which are of type post.
 func PostListAll(
 	connections connection.Service,
-	events event.Service,
 	objects object.Service,
 	reactions reaction.Service,
 	users user.Service,
@@ -269,17 +267,12 @@ func PostListAll(
 
 		ps := postsFromObjects(os)
 
-		err = enrichCounts(events, objects, reactions, currentApp, ps)
+		err = enrichCounts(objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
 
 		err = enrichHasReacted(reactions, currentApp, origin, ps)
-		if err != nil {
-			return nil, err
-		}
-
-		err = enrichIsLiked(events, currentApp, origin, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -316,7 +309,6 @@ type PostListUserFunc func(
 // connection user id.
 func PostListUser(
 	connections connection.Service,
-	events event.Service,
 	objects object.Service,
 	reactions reaction.Service,
 	users user.Service,
@@ -361,7 +353,7 @@ func PostListUser(
 
 		ps := postsFromObjects(os)
 
-		err = enrichCounts(events, objects, reactions, currentApp, ps)
+		err = enrichCounts(objects, reactions, currentApp, ps)
 		if err != nil {
 			return nil, err
 		}
@@ -400,7 +392,6 @@ type PostRetrieveFunc func(
 // PostRetrieve returns the Post for the given id.
 func PostRetrieve(
 	connections connection.Service,
-	events event.Service,
 	objects object.Service,
 	reactions reaction.Service,
 ) PostRetrieveFunc {
@@ -430,17 +421,12 @@ func PostRetrieve(
 
 		post := &Post{Object: os[0]}
 
-		err = enrichCounts(events, objects, reactions, currentApp, PostList{post})
+		err = enrichCounts(objects, reactions, currentApp, PostList{post})
 		if err != nil {
 			return nil, err
 		}
 
 		err = enrichHasReacted(reactions, currentApp, origin, PostList{post})
-		if err != nil {
-			return nil, err
-		}
-
-		err = enrichIsLiked(events, currentApp, origin, PostList{post})
 		if err != nil {
 			return nil, err
 		}
@@ -549,7 +535,6 @@ func constrainPostVisibility(origin Origin, visibility object.Visibility) error 
 }
 
 func enrichCounts(
-	events event.Service,
 	objects object.Service,
 	reactions reaction.Service,
 	currentApp *app.App,
@@ -621,37 +606,6 @@ func enrichHasReacted(
 			p.HasReacted.Sad = true
 		case reaction.TypeAngry:
 			p.HasReacted.Angry = true
-		}
-	}
-
-	return nil
-}
-
-func enrichIsLiked(
-	events event.Service,
-	currentApp *app.App,
-	userID uint64,
-	ps PostList,
-) error {
-	for _, p := range ps {
-		es, err := events.Query(currentApp.Namespace(), event.QueryOptions{
-			Enabled: &defaultEnabled,
-			ObjectIDs: []uint64{
-				p.ID,
-			},
-			Types: []string{
-				TypeLike,
-			},
-			UserIDs: []uint64{
-				userID,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
-		if len(es) == 1 {
-			p.IsLiked = true
 		}
 	}
 
