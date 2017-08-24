@@ -446,9 +446,10 @@ func UserSearchConsole(
 		}
 
 		us, err := users.Search(currentApp.Namespace(), user.QueryOptions{
-			Limit:  limit,
-			Offset: offset,
-			Query:  query,
+			Enabled: &defaultEnabled,
+			Limit:   limit,
+			Offset:  offset,
+			Query:   query,
 		})
 		if err != nil {
 			return nil, err
